@@ -1,0 +1,97 @@
+﻿<Window x:Class="TakingMedications.Views.ExportPdfDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Экспорт PDF-отчёта"
+        Width="560" Height="540"
+        Background="{DynamicResource BgDarkBrush}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="HeaderLabel"
+                   FontSize="18" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   Margin="0,0,0,12" />
+
+        <StackPanel Grid.Row="1">
+            <!-- Период -->
+            <TextBlock x:Name="LblPeriod" Style="{StaticResource DarkLabel}" FontWeight="Bold" />
+
+            <Grid Margin="0,6,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="60" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="60" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="LblFrom" Style="{StaticResource DarkLabel}" VerticalAlignment="Center" />
+                <DatePicker Grid.Column="1" x:Name="DateFrom" />
+                <TextBlock Grid.Column="3" x:Name="LblTo"   Style="{StaticResource DarkLabel}" VerticalAlignment="Center" />
+                <DatePicker Grid.Column="4" x:Name="DateTo" />
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <Button x:Name="QuickBtn7"   Style="{StaticResource RoundButton}"
+                        Background="{DynamicResource AccentBrush}"
+                        FontSize="12" Padding="10,4" Margin="0,0,6,0"
+                        Click="Quick7_Click" />
+                <Button x:Name="QuickBtn30"  Style="{StaticResource RoundButton}"
+                        Background="{DynamicResource AccentBrush}"
+                        FontSize="12" Padding="10,4" Margin="0,0,6,0"
+                        Click="Quick30_Click" />
+                <Button x:Name="QuickBtn90"  Style="{StaticResource RoundButton}"
+                        Background="{DynamicResource AccentBrush}"
+                        FontSize="12" Padding="10,4" Margin="0,0,6,0"
+                        Click="Quick90_Click" />
+                <Button x:Name="QuickBtnYr"  Style="{StaticResource RoundButton}"
+                        Background="{DynamicResource AccentBrush}"
+                        FontSize="12" Padding="10,4"
+                        Click="QuickYr_Click" />
+            </StackPanel>
+
+            <!-- Включить -->
+            <TextBlock x:Name="LblInclude" Style="{StaticResource DarkLabel}" FontWeight="Bold" Margin="0,16,0,4" />
+            <CheckBox x:Name="IncSchedule" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,4,0,0" />
+            <CheckBox x:Name="IncHistory"  Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,4,0,0" />
+            <CheckBox x:Name="IncPressure" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,4,0,0" />
+            <CheckBox x:Name="IncFinance"  Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,4,0,0" />
+
+            <!-- Файл -->
+            <TextBlock x:Name="LblFile" Style="{StaticResource DarkLabel}" FontWeight="Bold" Margin="0,16,0,4" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" x:Name="PathBox" Style="{StaticResource DarkTextBox}" />
+                <Button  Grid.Column="1" x:Name="BtnBrowse"
+                         Style="{StaticResource RoundButton}"
+                         Background="{DynamicResource AccentBrush}"
+                         FontSize="12" Padding="10,4"
+                         Margin="6,0,0,0"
+                         Click="BtnBrowse_Click" />
+            </Grid>
+
+            <CheckBox x:Name="OpenAfter" Style="{StaticResource DarkCheckBox}"
+                      IsChecked="True" Margin="0,12,0,0" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="BtnCancel" Style="{StaticResource RoundButton}"
+                    Background="{StaticResource DangerBrush}"
+                    Margin="0,0,8,0"
+                    Click="BtnCancel_Click" />
+            <Button x:Name="BtnSave" Style="{StaticResource RoundButton}"
+                    Background="{StaticResource SuccessBrush}"
+                    Click="BtnSave_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

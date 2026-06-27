@@ -1,0 +1,93 @@
+﻿<Window x:Class="TakingMedications.Views.MedicationEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Препарат"
+        Width="540" Height="640"
+        Background="{DynamicResource BgDarkBrush}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <Grid Margin="18,14,18,14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="HeaderLabel"
+                   FontSize="18" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   Margin="0,0,0,10" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" x:Name="LblSection"     Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="SectionCombo"
+                           DisplayMemberPath="Title" SelectedValuePath="SectionKey"
+                           Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" x:Name="LblTime"        Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="1" Grid.Column="1" x:Name="TimeBox"        Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" x:Name="LblTimeNote"    Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="2" Grid.Column="1" x:Name="TimeNoteBox"    Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" x:Name="LblName"        Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="3" Grid.Column="1" x:Name="NameBox"        Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" x:Name="LblSubtitle"    Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="4" Grid.Column="1" x:Name="SubtitleBox"    Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" x:Name="LblNote"        Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="5" Grid.Column="1" x:Name="NoteBox"        Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" x:Name="LblDoctor"      Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="6" Grid.Column="1" x:Name="DoctorBox"      Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="7" Grid.Column="0" x:Name="LblCourse"      Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="7" Grid.Column="1" x:Name="CourseBox"      Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="8" Grid.Column="0" x:Name="LblPharmacy"    Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="8" Grid.Column="1" x:Name="PharmacyBox"    Style="{StaticResource DarkTextBox}" Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="9" Grid.Column="0" x:Name="LblId"          Style="{StaticResource DarkLabel}" Margin="0,8,8,0" />
+                <TextBox   Grid.Row="9" Grid.Column="1" x:Name="IdBox"          Style="{StaticResource DarkTextBox}"
+                           Margin="0,8,0,0" />
+
+                <TextBlock Grid.Row="10" Grid.Column="0" x:Name="LblDescription" Style="{StaticResource DarkLabel}" Margin="0,8,8,0" VerticalAlignment="Top" />
+                <TextBox   Grid.Row="10" Grid.Column="1" x:Name="DescriptionBox" Style="{StaticResource DarkTextBox}"
+                           AcceptsReturn="True" TextWrapping="Wrap"
+                           VerticalScrollBarVisibility="Auto"
+                           MinHeight="90" Margin="0,8,0,8" />
+            </Grid>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button x:Name="BtnCancel" Style="{StaticResource RoundButton}"
+                    Background="{StaticResource DangerBrush}"
+                    Margin="0,0,8,0"
+                    Click="BtnCancel_Click" />
+            <Button x:Name="BtnSave" Style="{StaticResource RoundButton}"
+                    Background="{StaticResource SuccessBrush}"
+                    Click="BtnSave_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

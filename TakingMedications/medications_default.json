@@ -1,0 +1,27 @@
+[
+  {
+    "section": "УТРО (завтрак 09:00 - 10:00)",
+    "section_key": "morning",
+    "items": []
+  },
+  {
+    "section": "ДЕНЬ (обед 14:00 - 15:00)",
+    "section_key": "day",
+    "items": []
+  },
+  {
+    "section": "ВЕЧЕР (ужин 18:00 - 19:00)",
+    "section_key": "evening",
+    "items": []
+  },
+  {
+    "section": "СОН (перед сном 23:00)",
+    "section_key": "night",
+    "items": []
+  },
+  {
+    "section": "ПО НЕОБХОДИМОСТИ (SOS)",
+    "section_key": "sos",
+    "items": []
+  }
+]

@@ -1,0 +1,36 @@
+# Build outputs
+bin/
+obj/
+publish/
+
+# Distributions (большие бинарники)
+Distributions/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Временные скриншоты (большие png в корне)
+_screen*.png
+_screen.png
+_screen2.png
+
+# Папка дистрибутива с большими бинарниками
+Приём лекарств (C#)/
+
+# Вспомогательные файлы расширений IDE
+extensionData_*.md
+
+# PowerShell скрипты утилит
+_screenshot.ps1

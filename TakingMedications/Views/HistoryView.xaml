@@ -1,0 +1,141 @@
+<UserControl x:Class="TakingMedications.Views.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BgDarkBrush}">
+
+    <UserControl.Resources>
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="16,7"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="0,0,3,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="8,8,0,0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <TabControl x:Name="HistoryTabs" Margin="0,8,0,0"
+                SelectionChanged="HistoryTabs_SelectionChanged">
+
+        <!-- ── Вкладка: Календарь ── -->
+        <TabItem x:Name="TabCalendar">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Навигация по месяцам -->
+                <Border Grid.Row="0" Background="{DynamicResource BgCardBrush}"
+                        CornerRadius="0,12,12,12" Padding="14,10" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="◀" Style="{StaticResource IconButton}"
+                                Background="{DynamicResource AccentBrush}"
+                                Click="BtnPrevMonth_Click" />
+                        <TextBlock Grid.Column="1" x:Name="MonthLabel"
+                                   FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Button Grid.Column="2" Content="▶" Style="{StaticResource IconButton}"
+                                Background="{DynamicResource AccentBrush}"
+                                Click="BtnNextMonth_Click" />
+                    </Grid>
+                </Border>
+
+                <!-- Сетка календаря -->
+                <Border Grid.Row="1" Background="{DynamicResource BgCardBrush}"
+                        CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid x:Name="WeekdaysHeader" Margin="0,0,0,6" />
+                        <Grid x:Name="CalendarGrid" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Легенда -->
+                <Border Grid.Row="2" Background="{DynamicResource BgCardBrush}"
+                        CornerRadius="12" Padding="12,8" Margin="0,0,0,10">
+                    <StackPanel x:Name="LegendPanel" Orientation="Horizontal" />
+                </Border>
+
+                <!-- Детали дня -->
+                <Border Grid.Row="3" Background="{DynamicResource BgCardBrush}"
+                        CornerRadius="12" Padding="14,12">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="DayDetailsPanel" />
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </TabItem>
+
+        <!-- ── Вкладка: График ── -->
+        <TabItem x:Name="TabCharts">
+            <Border Background="{DynamicResource BgCardBrush}"
+                    CornerRadius="0,12,12,12" Padding="14,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Заголовок верхнего графика -->
+                    <TextBlock Grid.Row="0" x:Name="LblChartAdherence"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               Margin="0,0,0,6"/>
+
+                    <!-- График приёма по месяцам (столбчатый) -->
+                    <Canvas Grid.Row="1" x:Name="AdherenceChart" Background="Transparent"
+                            Margin="0,0,0,16"
+                            SizeChanged="AdherenceChart_SizeChanged"/>
+
+                    <!-- Заголовок нижнего графика -->
+                    <TextBlock Grid.Row="2" x:Name="LblChartPressure"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               Margin="0,0,0,6"/>
+
+                    <!-- График АД за последние месяцы -->
+                    <Canvas Grid.Row="3" x:Name="PressureChart" Background="Transparent"
+                            SizeChanged="PressureChart_SizeChanged"/>
+                </Grid>
+            </Border>
+        </TabItem>
+    </TabControl>
+</UserControl>
