@@ -21,9 +21,9 @@ public static class ThemeService
     [
         // Фоны и текст
         // Светлая тема — палитра GardenPlanner (#2C5F2D)
-        ("BgDarkBrush",          Color.FromRgb(0x1A, 0x1A, 0x2E), Color.FromRgb(0xF4, 0xF8, 0xF4)),
-        ("BgCardBrush",          Color.FromRgb(0x16, 0x21, 0x3E), Color.FromRgb(0xFF, 0xFF, 0xFF)),
-        ("BgInputBrush",         Color.FromRgb(0x0F, 0x34, 0x60), Color.FromRgb(0xEE, 0xF5, 0xEE)),
+        ("BgDarkBrush",          Color.FromRgb(0x1A, 0x1A, 0x2E), Color.FromRgb(0xD0, 0xE8, 0xD0)),
+        ("BgCardBrush",          Color.FromRgb(0x16, 0x21, 0x3E), Color.FromRgb(0xE4, 0xF2, 0xE4)),
+        ("BgInputBrush",         Color.FromRgb(0x0F, 0x34, 0x60), Color.FromRgb(0xFF, 0xFF, 0xFF)),
         ("TextPrimaryBrush",     Color.FromRgb(0xEA, 0xEA, 0xEA), Color.FromRgb(0x2B, 0x2B, 0x2B)),
         ("TextSecondaryBrush",   Color.FromRgb(0xA0, 0xA0, 0xB8), Color.FromRgb(0x4F, 0x5A, 0x41)),
         // Акцент (кнопки) — зелёный GardenPlanner в светлой теме
