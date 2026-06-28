@@ -781,7 +781,7 @@ public partial class ScheduleView : UserControl
             return MakeBadge("∞ Длительно");                     // AccentBrush
         if (cs.Contains("потребност") || cs == "sos" || cs.Contains("по требов"))
             return MakeBadge("По потреб.", "#E65100");            // семантический оранжевый
-        return MakeBadge(ShortenCourse(med.Course));              // AccentBrush (активный и не начатый)
+        return MakeBadge(ShortenCourse(med.Course), (Brush)FindResource("HeaderButtonBrush")); // как кнопка Настройки
     }
 
     private static string ShortenCourse(string course)
@@ -815,16 +815,19 @@ public partial class ScheduleView : UserControl
         var bg = hexBg is not null
             ? (Brush)new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg))
             : (Brush)FindResource("AccentBrush");
-        return new Border
+        return MakeBadge(label, bg);
+    }
+
+    private Border MakeBadge(string label, Brush brush)
+        => new Border
         {
-            Background        = bg,
+            Background        = brush,
             CornerRadius      = new CornerRadius(4),
             Padding           = new Thickness(7, 2, 7, 2),
             Margin            = new Thickness(3, 0, 0, 0),
             Child             = new TextBlock { Text = label, FontSize = 12, Foreground = Brushes.White },
             VerticalAlignment = VerticalAlignment.Center,
         };
-    }
 
     private TextBlock LabelFor(string key)
         => new()
