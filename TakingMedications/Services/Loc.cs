@@ -222,6 +222,11 @@ public static class Loc
             ["settings_border_dark"]         = "Тёмные",
             ["settings_border_desc"]         = "Влияет на разделительные линии между карточками препаратов.",
 
+            // Обновления
+            ["settings_update_section"]  = "🔄 Обновления",
+            ["settings_update_check"]    = "🔍 Проверить обновления",
+            ["settings_update_uptodate"] = "Установлена последняя версия.",
+            ["settings_update_failed"]   = "Не удалось проверить. Проверьте подключение.",
 
             // АД
             ["pressure_title"]         = "Артериальное давление",
@@ -575,6 +580,10 @@ public static class Loc
             ["settings_border_dark"]         = "Dark",
             ["settings_border_desc"]         = "Affects the separator lines between medication cards.",
 
+            ["settings_update_section"]  = "🔄 Updates",
+            ["settings_update_check"]    = "🔍 Check for updates",
+            ["settings_update_uptodate"] = "You have the latest version.",
+            ["settings_update_failed"]   = "Could not check. Please verify your connection.",
 
             ["pressure_title"]         = "Blood pressure",
             ["pressure_header"]        = "Blood pressure  {date}",
@@ -922,6 +931,10 @@ public static class Loc
             ["settings_border_dark"]         = "Темні",
             ["settings_border_desc"]         = "Впливає на розділові лінії між картками препаратів.",
 
+            ["settings_update_section"]  = "🔄 Оновлення",
+            ["settings_update_check"]    = "🔍 Перевірити оновлення",
+            ["settings_update_uptodate"] = "Встановлена остання версія.",
+            ["settings_update_failed"]   = "Не вдалося перевірити. Перевірте підключення.",
 
             ["pressure_title"]         = "Артеріальний тиск",
             ["pressure_header"]        = "Артеріальний тиск  {date}",

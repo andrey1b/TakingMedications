@@ -237,8 +237,28 @@ public partial class SettingsWindow : Window
         RbBorderDark.Content      = Loc.T("settings_border_dark");
         LblBorderDesc.Text        = Loc.T("settings_border_desc");
 
+        LblUpdateSection.Text  = Loc.T("settings_update_section");
+        BtnCheckUpdate.Content = Loc.T("settings_update_check");
+
         BtnSave.Content   = Loc.T("btn_save");
         BtnCancel.Content = Loc.T("btn_cancel");
+    }
+
+    private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        BtnCheckUpdate.IsEnabled = false;
+        LblUpdateStatus.Text = "…";
+
+        var result = await Updater.CheckForUpdateAsync(Loc.CurrentLang);
+
+        LblUpdateStatus.Text = result switch
+        {
+            UpdateCheckResult.UpToDate   => Loc.T("settings_update_uptodate"),
+            UpdateCheckResult.Failed     => Loc.T("settings_update_failed"),
+            _                            => ""   // UpdateFound — диалог уже показан
+        };
+
+        BtnCheckUpdate.IsEnabled = true;
     }
 
     // ── Event handlers ────────────────────────────────────────────────

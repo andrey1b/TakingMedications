@@ -9,6 +9,8 @@ using System.Windows;
 
 namespace TakingMedications.Services;
 
+enum UpdateCheckResult { UpdateFound, UpToDate, Failed }
+
 static class Updater
 {
     private static readonly HttpClient Http = new()
@@ -17,21 +19,21 @@ static class Updater
         DefaultRequestHeaders = { { "User-Agent", "TakingMedications" } }
     };
 
-    public static async Task<bool> CheckForUpdateAsync(string lang)
+    public static async Task<UpdateCheckResult> CheckForUpdateAsync(string lang)
     {
         try
         {
             var release = await Http.GetFromJsonAsync<GhRelease>(
                 "https://api.github.com/repos/andrey1b/TakingMedications/releases/latest");
 
-            if (release is null) return false;
+            if (release is null) return UpdateCheckResult.Failed;
 
             var tag = release.TagName.TrimStart('v');
-            if (!Version.TryParse(tag, out var latest)) return false;
+            if (!Version.TryParse(tag, out var latest)) return UpdateCheckResult.Failed;
 
             var cur = Assembly.GetExecutingAssembly().GetName().Version!;
             var current = new Version(cur.Major, cur.Minor, cur.Build);
-            if (latest <= current) return false;
+            if (latest <= current) return UpdateCheckResult.UpToDate;
 
             string msg = lang == "en"
                 ? $"Taking Medications {latest} is available.\nOpen the download page?"
@@ -43,9 +45,9 @@ static class Updater
             if (res == MessageBoxResult.Yes)
                 Process.Start(new ProcessStartInfo(release.HtmlUrl) { UseShellExecute = true });
 
-            return true;
+            return UpdateCheckResult.UpdateFound;
         }
-        catch { return false; }
+        catch { return UpdateCheckResult.Failed; }
     }
 
     private record GhRelease(
