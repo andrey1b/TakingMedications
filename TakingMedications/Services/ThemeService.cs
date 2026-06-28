@@ -41,6 +41,11 @@ public static class ThemeService
         ("SectionEveningBrush",  Color.FromRgb(0x9B, 0x59, 0xB6), Color.FromRgb(0x5B, 0x21, 0x86)),
         ("SectionNightBrush",    Color.FromRgb(0x34, 0x49, 0x5E), Color.FromRgb(0x1A, 0x25, 0x30)),
         ("SectionSosBrush",      Color.FromRgb(0xE7, 0x4C, 0x3C), Color.FromRgb(0xA0, 0x1B, 0x0D)),
+        // Шапка окна (стиль GardenPlanner в светлой теме)
+        ("HeaderBgBrush",        Color.FromRgb(0x1A, 0x1A, 0x2E), Color.FromRgb(0x2C, 0x5F, 0x2D)),
+        ("HeaderTextBrush",      Color.FromRgb(0xEA, 0xEA, 0xEA), Color.FromRgb(0xFF, 0xFF, 0xFF)),
+        ("HeaderSubBrush",       Color.FromRgb(0xA0, 0xA0, 0xB8), Color.FromRgb(0xBC, 0xE1, 0xAF)),
+        ("HeaderButtonBrush",    Color.FromRgb(0x6C, 0x63, 0xFF), Color.FromRgb(0x3E, 0x87, 0x41)),
     ];
 
     /// <summary>Применяет пресет цвета разделителей. Не зависит от темы.</summary>

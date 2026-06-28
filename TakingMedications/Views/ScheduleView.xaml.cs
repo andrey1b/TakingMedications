@@ -217,7 +217,7 @@ public partial class ScheduleView : UserControl
                 Text = "  —  " + Loc.T("course_finished", ("start", course!.Start.ToString("dd.MM.yyyy"))),
                 FontSize = 11, Foreground = grey, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0),
             });
-            var showBtn = MakeClickBadge(Loc.T("course_show_btn"), "#455A64");
+            var showBtn = MakeClickBadge(Loc.T("course_show_btn"));
             compRow.Children.Add(showBtn);
 
             compactBorder = new Border
@@ -321,11 +321,11 @@ public partial class ScheduleView : UserControl
 
         if (!string.IsNullOrEmpty(med.Doctor))
             rightPanel.Children.Add(MakeBadge(
-                Loc.T("schedule_doctor", ("doctor", med.Doctor)), "#546E7A"));
+                Loc.T("schedule_doctor", ("doctor", med.Doctor))));
 
         if (!string.IsNullOrEmpty(med.Pharmacy))
         {
-            var pharmBtn = MakeClickBadge(Loc.T("btn_pharmacy"), "#1565C0");
+            var pharmBtn = MakeClickBadge(Loc.T("btn_pharmacy"));
             pharmBtn.MouseLeftButtonUp += (_, _) => OpenPharmacy(med);
             rightPanel.Children.Add(pharmBtn);
         }
@@ -344,7 +344,7 @@ public partial class ScheduleView : UserControl
             };
 
             bool descExpanded = false;
-            var descBtn   = MakeClickBadge(Loc.T("btn_description"), "#37474F");
+            var descBtn   = MakeClickBadge(Loc.T("btn_description"));
             var descBtnTb = (TextBlock)descBtn.Child;
             descBtn.MouseLeftButtonUp += (_, _) =>
             {
@@ -486,7 +486,7 @@ public partial class ScheduleView : UserControl
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin            = new Thickness(0, 0, 6, 0),
             });
-            var extendBtn = MakeClickBadge(Loc.T("course_extend_btn"), "#1565C0");
+            var extendBtn = MakeClickBadge(Loc.T("course_extend_btn"));
             extendBtn.MouseLeftButtonUp += (_, _) => ShowExtendCourseDialog(med, course);
             panel.Children.Add(extendBtn);
             return panel;
@@ -503,17 +503,17 @@ public partial class ScheduleView : UserControl
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin    = new Thickness(0, 0, 6, 0),
             });
-            var newBtn = MakeClickBadge(Loc.T("course_start_btn"), "#2E7D32");
+            var newBtn = MakeClickBadge(Loc.T("course_start_btn"));
             newBtn.MouseLeftButtonUp += (_, _) => ShowStartCourseDialog(med);
             panel.Children.Add(newBtn);
-            var hideBtn = MakeClickBadge(Loc.T("course_hide_btn"), "#455A64");
+            var hideBtn = MakeClickBadge(Loc.T("course_hide_btn"));
             hideBtn.MouseLeftButtonUp += (_, _) => ToggleCourseExpand(med.Id, null, null);
             panel.Children.Add(hideBtn);
             return panel;
         }
 
         // ── Курс ещё не начат ────────────────────────────────────────
-        var startBtn = MakeClickBadge(Loc.T("course_start_btn"), "#2E7D32");
+        var startBtn = MakeClickBadge(Loc.T("course_start_btn"));
         startBtn.MouseLeftButtonUp += (_, _) => ShowStartCourseDialog(med);
         panel.Children.Add(startBtn);
         return panel;
@@ -777,31 +777,14 @@ public partial class ScheduleView : UserControl
         if (string.IsNullOrEmpty(med.Course)) return null;
         var cs = med.Course.Trim().ToLowerInvariant();
 
-        string text;
-        string color;
-
         if (cs.Contains("длительно") || cs.Contains("долго"))
-        {
-            text  = "∞ Длительно";
-            color = "#388E3C";   // зелёный
-        }
-        else if (cs.Contains("потребност") || cs == "sos" || cs.Contains("по требов"))
-        {
-            text  = "По потреб.";
-            color = "#E65100";   // оранжевый
-        }
-        else if (course?.Active == true)
-        {
-            text  = ShortenCourse(med.Course);
-            color = "#F9A825";   // жёлтый — активный курс
-        }
-        else
-        {
-            text  = ShortenCourse(med.Course);
-            color = "#546E7A";   // серо-синий — не начатый
-        }
+            return MakeBadge("∞ Длительно");                     // AccentBrush
+        if (cs.Contains("потребност") || cs == "sos" || cs.Contains("по требов"))
+            return MakeBadge("По потреб.", "#E65100");            // семантический оранжевый
+        if (course?.Active == true)
+            return MakeBadge(ShortenCourse(med.Course), "#F9A825"); // семантический жёлтый
 
-        return MakeBadge(text, color);
+        return MakeBadge(ShortenCourse(med.Course));              // AccentBrush (не начатый)
     }
 
     private static string ShortenCourse(string course)
@@ -813,28 +796,38 @@ public partial class ScheduleView : UserControl
         return s.Length > 12 ? s[..10] + "…" : s;
     }
 
-    private static Border MakeClickBadge(string label, string hexBg)
-        => new()
+    private Border MakeClickBadge(string label, string? hexBg = null)
+    {
+        var bg = hexBg is not null
+            ? (Brush)new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg))
+            : (Brush)FindResource("AccentBrush");
+        return new Border
         {
-            Background   = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg)),
-            CornerRadius = new CornerRadius(3),
-            Padding      = new Thickness(5, 1, 5, 1),
-            Margin       = new Thickness(3, 0, 0, 0),
-            Cursor       = Cursors.Hand,
-            Child        = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
+            Background        = bg,
+            CornerRadius      = new CornerRadius(3),
+            Padding           = new Thickness(5, 1, 5, 1),
+            Margin            = new Thickness(3, 0, 0, 0),
+            Cursor            = Cursors.Hand,
+            Child             = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
             VerticalAlignment = VerticalAlignment.Center,
         };
+    }
 
-    private static Border MakeBadge(string label, string hexBg)
-        => new()
+    private Border MakeBadge(string label, string? hexBg = null)
+    {
+        var bg = hexBg is not null
+            ? (Brush)new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg))
+            : (Brush)FindResource("AccentBrush");
+        return new Border
         {
-            Background   = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg)),
-            CornerRadius = new CornerRadius(3),
-            Padding      = new Thickness(5, 1, 5, 1),
-            Margin       = new Thickness(3, 0, 0, 0),
-            Child        = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
+            Background        = bg,
+            CornerRadius      = new CornerRadius(3),
+            Padding           = new Thickness(5, 1, 5, 1),
+            Margin            = new Thickness(3, 0, 0, 0),
+            Child             = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
             VerticalAlignment = VerticalAlignment.Center,
         };
+    }
 
     private TextBlock LabelFor(string key)
         => new()

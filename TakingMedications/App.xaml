@@ -23,6 +23,11 @@
         <SolidColorBrush x:Key="CourseBrush"         Color="#FFD54F" />
         <SolidColorBrush x:Key="SeparatorBrush"      Color="#00FFFFFF" />
         <SolidColorBrush x:Key="CardBorderBrush"     Color="#00FFFFFF" />
+        <!-- Шапка окна — начальные значения тёмной темы (ThemeService перезапишет при старте) -->
+        <SolidColorBrush x:Key="HeaderBgBrush"       Color="#1A1A2E" />
+        <SolidColorBrush x:Key="HeaderTextBrush"     Color="#EAEAEA" />
+        <SolidColorBrush x:Key="HeaderSubBrush"      Color="#A0A0B8" />
+        <SolidColorBrush x:Key="HeaderButtonBrush"   Color="#6C63FF" />
 
         <!-- ── Закруглённая кнопка ── -->
         <Style x:Key="RoundButton" TargetType="Button">

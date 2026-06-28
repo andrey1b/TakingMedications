@@ -9,9 +9,9 @@
     <RootNamespace>TakingMedications</RootNamespace>
     <AssemblyName>TakingMedications</AssemblyName>
     <AssemblyTitle>Taking Medications</AssemblyTitle>
-    <AssemblyVersion>1.3.1.0</AssemblyVersion>
-    <FileVersion>1.3.1.0</FileVersion>
-    <Description>Приём лекарств — C# WPF v1.3.1 (светлая тема: салатные фоны, белые поля ввода)</Description>
+    <AssemblyVersion>1.3.2.0</AssemblyVersion>
+    <FileVersion>1.3.2.0</FileVersion>
+    <Description>Приём лекарств — C# WPF v1.3.2 (шапка GardenPlanner, единые зелёные кнопки)</Description>
     <ApplicationIcon>Medicines.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
