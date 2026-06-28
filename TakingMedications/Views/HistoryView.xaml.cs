@@ -15,10 +15,10 @@ namespace TakingMedications.Views;
 
 public partial class HistoryView : UserControl
 {
-    private static readonly Color CalFull    = (Color)ColorConverter.ConvertFromString("#2ECC71"); // green
-    private static readonly Color CalPartial = (Color)ColorConverter.ConvertFromString("#F1C40F"); // yellow
-    private static readonly Color CalEmpty   = (Color)ColorConverter.ConvertFromString("#E74C3C"); // red
-    private static readonly Color CalNone    = (Color)ColorConverter.ConvertFromString("#3D4257"); // grey
+    private static readonly Color CalFull    = (Color)ColorConverter.ConvertFromString("#2C5F2D"); // тёмно-зелёный — всё принято
+    private static readonly Color CalPartial = (Color)ColorConverter.ConvertFromString("#BCE1AF"); // светло-салатный — частично
+    private static readonly Color CalEmpty   = (Color)ColorConverter.ConvertFromString("#E74C3C"); // красный — пропущено
+    private static readonly Color CalNone    = (Color)ColorConverter.ConvertFromString("#E4F2E4"); // почти белый — нет данных
 
     private MedAppContext? _ctx;
     private DateTime _viewMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -126,12 +126,20 @@ public partial class HistoryView : UserControl
             && _selectedDay.Value.Date == d.Date;
         var isToday = d.Date == DateTime.Today;
 
+        bool isLight = fill == CalNone || fill == CalPartial;
+        Brush textColor = isLight
+            ? new SolidColorBrush(Color.FromRgb(0x3A, 0x5A, 0x3A))
+            : Brushes.White;
+        Brush todayBorderBrush = isLight
+            ? new SolidColorBrush(Color.FromRgb(0x2C, 0x5F, 0x2D))
+            : Brushes.White;
+
         var dayLabel = new TextBlock
         {
             Text = d.Day.ToString(),
             FontSize = 14,
             FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
-            Foreground = Brushes.White,
+            Foreground = textColor,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -145,7 +153,7 @@ public partial class HistoryView : UserControl
             CornerRadius = new CornerRadius(8),
             BorderBrush = isSelected
                 ? (Brush)FindResource("AccentBrush")
-                : (isToday ? Brushes.White : Brushes.Transparent),
+                : (isToday ? todayBorderBrush : Brushes.Transparent),
             BorderThickness = new Thickness(isSelected ? 3 : (isToday ? 2 : 0)),
             Cursor = Cursors.Hand,
             Child = dayLabel,
@@ -165,10 +173,10 @@ public partial class HistoryView : UserControl
         AddLegendItem(CalFull,    Loc.T("history_legend_full"));
         AddLegendItem(CalPartial, Loc.T("history_legend_partial"));
         AddLegendItem(CalEmpty,   Loc.T("history_legend_empty"));
-        AddLegendItem(CalNone,    Loc.T("history_legend_none"));
+        AddLegendItem(CalNone,    Loc.T("history_legend_none"), addBorder: true);
     }
 
-    private void AddLegendItem(Color c, string text)
+    private void AddLegendItem(Color c, string text, bool addBorder = false)
     {
         var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 16, 0) };
         sp.Children.Add(new Border
@@ -176,6 +184,8 @@ public partial class HistoryView : UserControl
             Width = 14, Height = 14,
             CornerRadius = new CornerRadius(4),
             Background = new SolidColorBrush(c),
+            BorderBrush = addBorder ? new SolidColorBrush(Color.FromRgb(0x9C, 0xBD, 0x9C)) : null,
+            BorderThickness = new Thickness(addBorder ? 1 : 0),
             Margin = new Thickness(0, 0, 6, 0),
             VerticalAlignment = VerticalAlignment.Center
         });
