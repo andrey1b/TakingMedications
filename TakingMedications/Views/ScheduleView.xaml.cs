@@ -804,11 +804,11 @@ public partial class ScheduleView : UserControl
         return new Border
         {
             Background        = bg,
-            CornerRadius      = new CornerRadius(3),
-            Padding           = new Thickness(5, 1, 5, 1),
+            CornerRadius      = new CornerRadius(4),
+            Padding           = new Thickness(7, 2, 7, 2),
             Margin            = new Thickness(3, 0, 0, 0),
             Cursor            = Cursors.Hand,
-            Child             = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
+            Child             = new TextBlock { Text = label, FontSize = 12, Foreground = Brushes.White },
             VerticalAlignment = VerticalAlignment.Center,
         };
     }
@@ -821,10 +821,10 @@ public partial class ScheduleView : UserControl
         return new Border
         {
             Background        = bg,
-            CornerRadius      = new CornerRadius(3),
-            Padding           = new Thickness(5, 1, 5, 1),
+            CornerRadius      = new CornerRadius(4),
+            Padding           = new Thickness(7, 2, 7, 2),
             Margin            = new Thickness(3, 0, 0, 0),
-            Child             = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White },
+            Child             = new TextBlock { Text = label, FontSize = 12, Foreground = Brushes.White },
             VerticalAlignment = VerticalAlignment.Center,
         };
     }

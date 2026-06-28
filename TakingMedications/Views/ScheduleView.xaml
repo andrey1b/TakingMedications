@@ -45,7 +45,7 @@
                         Click="BtnNextDay_Click" />
                 <Button Grid.Column="3" x:Name="BtnToday"
                         Style="{StaticResource RoundButton}"
-                        Background="{StaticResource SuccessBrush}"
+                        Background="{DynamicResource AccentBrush}"
                         Margin="0,0,8,0"
                         Click="BtnToday_Click" />
                 <Button Grid.Column="4" x:Name="BtnNow"
