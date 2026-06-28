@@ -1,6 +1,6 @@
 #define MyAppName "TakingMedications"
 #define MyAppDisplayName "Приём лекарств (C#)"
-#define MyAppVersion "1.3.2"
+#define MyAppVersion "1.3.3"
 #define MyAppPublisher "andrey1b"
 #define MyAppURL "https://github.com/andrey1b/TakingMedications"
 #define MyAppExeName "TakingMedications.exe"

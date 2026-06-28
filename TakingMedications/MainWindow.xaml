@@ -67,6 +67,13 @@
                                FontSize="12"
                                Foreground="{DynamicResource HeaderSubBrush}"
                                Margin="0,2,0,0" />
+                    <TextBlock x:Name="UpdateLabel"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="#90EE90"
+                               Margin="0,3,0,0"
+                               Cursor="Hand"
+                               Visibility="Collapsed"
+                               MouseLeftButtonUp="UpdateLabel_Click" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal"

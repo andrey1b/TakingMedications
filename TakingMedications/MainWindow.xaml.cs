@@ -1,4 +1,11 @@
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using TakingMedications.Common;
 using TakingMedications.Services;
@@ -10,6 +17,14 @@ public partial class MainWindow : Window
 {
     private readonly MedAppContext _ctx;
     private TrayService? _tray;
+
+    private static readonly string _appVersion = GetAppVersion();
+
+    private static string GetAppVersion()
+    {
+        var v = Assembly.GetExecutingAssembly().GetName().Version!;
+        return $"{v.Major}.{v.Minor}.{v.Build}";
+    }
 
     public MainWindow()
     {
@@ -30,33 +45,32 @@ public partial class MainWindow : Window
         ForecastViewControl.Initialize(_ctx);
 
         Loc.LanguageChanged += ApplyLocalization;
-        // TrayService создаём после InitializeComponent (нужен this)
         _tray = new TrayService(_ctx, this);
 
         Closed += (_, _) =>
         {
             Loc.LanguageChanged -= ApplyLocalization;
             _tray?.Dispose();
-            // В режиме "none" закрытие окна = выход из приложения.
             System.Windows.Application.Current.Shutdown();
         };
 
         ApplyLocalization();
+        _ = CheckForUpdateAsync();
     }
 
     public void RefreshLocalization() => ApplyLocalization();
 
     private void ApplyLocalization()
     {
-        Title = $"{Loc.T("app_title")} (C#)";
-        TitleLabel.Text = Loc.T("app_title");
+        var title = Loc.T("app_title");
+        Title = $"{title} v{_appVersion}";
+        TitleLabel.Text = $"{title} v{_appVersion}";
 
         var name = _ctx.State.Settings.PatientName;
         SubLabel.Text = string.IsNullOrEmpty(name)
             ? Loc.T("app_data_folder", ("path", AppPaths.ResolveDataDir()))
             : name;
 
-        // Кнопки: только иконка, текст — во всплывающей подсказке
         TtExportPdf.Content  = Loc.T("btn_export_pdf");
         TtPressure.Content   = Loc.T("btn_pressure");
         TtNotes.Content      = Loc.T("btn_notes");
@@ -78,6 +92,42 @@ public partial class MainWindow : Window
         BtnReminders.Background = on
             ? (Brush)FindResource("SuccessBrush")
             : (Brush)FindResource("DangerBrush");
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.Timeout = TimeSpan.FromSeconds(10);
+            http.DefaultRequestHeaders.Add("User-Agent", "TakingMedications");
+            var json = await http.GetStringAsync(
+                "https://api.github.com/repos/andrey1b/TakingMedications/releases/latest");
+
+            var m = Regex.Match(json, @"""tag_name""\s*:\s*""v?([\d.]+)""");
+            if (!m.Success) return;
+            if (!Version.TryParse(m.Groups[1].Value, out var latest)) return;
+
+            if (!Version.TryParse(_appVersion, out var current)) return;
+            if (latest <= current) return;
+
+            Dispatcher.Invoke(() =>
+            {
+                bool ru = Loc.CurrentLang != "en";
+                UpdateLabel.Text = ru
+                    ? $"⬆  Доступна версия {latest}  — нажмите для загрузки"
+                    : $"⬆  Version {latest} available  — click to download";
+                UpdateLabel.Visibility = Visibility.Visible;
+            });
+        }
+        catch { /* нет интернета — тихо игнорируем */ }
+    }
+
+    private void UpdateLabel_Click(object sender, MouseButtonEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(
+            "https://github.com/andrey1b/TakingMedications/releases/latest")
+        { UseShellExecute = true });
     }
 
     private void BtnNotes_Click(object sender, RoutedEventArgs e)
