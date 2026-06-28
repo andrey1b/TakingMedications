@@ -1,9 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.Net.Http;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -55,7 +52,7 @@ public partial class MainWindow : Window
         };
 
         ApplyLocalization();
-        _ = CheckForUpdateAsync();
+        Loaded += async (_, _) => await Updater.CheckForUpdateAsync(Loc.CurrentLang);
     }
 
     public void RefreshLocalization() => ApplyLocalization();
@@ -92,35 +89,6 @@ public partial class MainWindow : Window
         BtnReminders.Background = on
             ? (Brush)FindResource("SuccessBrush")
             : (Brush)FindResource("DangerBrush");
-    }
-
-    private async Task CheckForUpdateAsync()
-    {
-        try
-        {
-            using var http = new HttpClient();
-            http.Timeout = TimeSpan.FromSeconds(10);
-            http.DefaultRequestHeaders.Add("User-Agent", "TakingMedications");
-            var json = await http.GetStringAsync(
-                "https://api.github.com/repos/andrey1b/TakingMedications/releases/latest");
-
-            var m = Regex.Match(json, @"""tag_name""\s*:\s*""v?([\d.]+)""");
-            if (!m.Success) return;
-            if (!Version.TryParse(m.Groups[1].Value, out var latest)) return;
-
-            if (!Version.TryParse(_appVersion, out var current)) return;
-            if (latest <= current) return;
-
-            Dispatcher.Invoke(() =>
-            {
-                bool ru = Loc.CurrentLang != "en";
-                UpdateLabel.Text = ru
-                    ? $"⬆  Доступна версия {latest}  — нажмите для загрузки"
-                    : $"⬆  Version {latest} available  — click to download";
-                UpdateLabel.Visibility = Visibility.Visible;
-            });
-        }
-        catch { /* нет интернета — тихо игнорируем */ }
     }
 
     private void UpdateLabel_Click(object sender, MouseButtonEventArgs e)
