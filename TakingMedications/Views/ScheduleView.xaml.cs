@@ -781,10 +781,7 @@ public partial class ScheduleView : UserControl
             return MakeBadge("∞ Длительно");                     // AccentBrush
         if (cs.Contains("потребност") || cs == "sos" || cs.Contains("по требов"))
             return MakeBadge("По потреб.", "#E65100");            // семантический оранжевый
-        if (course?.Active == true)
-            return MakeBadge(ShortenCourse(med.Course), "#F9A825"); // семантический жёлтый
-
-        return MakeBadge(ShortenCourse(med.Course));              // AccentBrush (не начатый)
+        return MakeBadge(ShortenCourse(med.Course));              // AccentBrush (активный и не начатый)
     }
 
     private static string ShortenCourse(string course)
