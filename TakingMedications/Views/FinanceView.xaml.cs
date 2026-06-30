@@ -130,24 +130,73 @@ public partial class FinanceView : UserControl
             return;
         }
 
-        var items = HomeAccountingReader.GetMedicationExpenses();
-        decimal total = HomeAccountingReader.Total(items);
+        var all = HomeAccountingReader.GetMedicationExpenses();
+
+        // ── Фильтр: дата начала + только назначенные ─────────────────
+        var (onlyPrescribed, fromStart, startOverride, savedSubcats) = LoadFinanceFilter();
+        var allSubcats = all.Select(e => e.Subcategory)
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                            .Distinct().ToList();
+        var selected = GetSelectedSubcats(allSubcats, savedSubcats);
+        string? startIso = EffectiveStartIso(fromStart, startOverride);
+
+        var items = all.Where(e =>
+            (startIso == null || string.CompareOrdinal(e.Date, startIso) >= 0) &&
+            (!onlyPrescribed || selected.Contains(e.Subcategory)))
+            .ToList();
+
+        decimal total  = HomeAccountingReader.Total(items);
+        int     hidden = all.Count - items.Count;
 
         ActualHeaderText.Text = Loc.T("fin_actual_title") + "   —   " +
             Loc.T("fin_actual_total",
                 ("amount",   FmtMoney((double)total, true)),
                 ("currency", Loc.T("fin_currency")));
 
+        // ── Кнопки: Открыть «Деньги» + Настроить фильтр ──────────────
+        var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
         var openBtn = new Button
         {
             Content = Loc.T("fin_actual_open_money"),
             Style = (Style)FindResource("RoundButton"),
-            HorizontalAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(14, 5, 14, 5),
-            Margin = new Thickness(0, 0, 0, 8),
+            Margin = new Thickness(0, 0, 8, 0),
         };
         openBtn.Click += (_, _) => HomeAccountingReader.OpenHomeAccounting();
-        ActualPanel.Children.Add(openBtn);
+        btnRow.Children.Add(openBtn);
+        var cfgBtn = new Button
+        {
+            Content = Loc.T("fin_filter_configure"),
+            Style = (Style)FindResource("RoundButton"),
+            Padding = new Thickness(14, 5, 14, 5),
+        };
+        cfgBtn.Click += (_, _) => ShowFilterDialog(all);
+        btnRow.Children.Add(cfgBtn);
+        ActualPanel.Children.Add(btnRow);
+
+        // ── Быстрые чекбоксы ─────────────────────────────────────────
+        var cbOnly = new CheckBox
+        {
+            Content = Loc.T("fin_filter_only_prescribed"),
+            IsChecked = onlyPrescribed,
+            Foreground = (Brush)FindResource("TextPrimaryBrush"),
+            Margin = new Thickness(0, 0, 0, 2),
+        };
+        cbOnly.Checked   += (_, _) => { SaveFinanceFilterField("only_prescribed", true);  BuildActualExpenses(); };
+        cbOnly.Unchecked += (_, _) => { SaveFinanceFilterField("only_prescribed", false); BuildActualExpenses(); };
+        ActualPanel.Children.Add(cbOnly);
+
+        string startLabel = startIso != null ? FmtDate(startIso) : "—";
+        var cbFrom = new CheckBox
+        {
+            Content = Loc.T("fin_filter_from_start", ("date", startLabel)),
+            IsChecked = fromStart,
+            Foreground = (Brush)FindResource("TextPrimaryBrush"),
+            Margin = new Thickness(0, 0, 0, 6),
+        };
+        cbFrom.Checked   += (_, _) => { SaveFinanceFilterField("from_start", true);  BuildActualExpenses(); };
+        cbFrom.Unchecked += (_, _) => { SaveFinanceFilterField("from_start", false); BuildActualExpenses(); };
+        ActualPanel.Children.Add(cbFrom);
 
         if (items.Count == 0)
         {
@@ -207,6 +256,190 @@ public partial class FinanceView : UserControl
         if (items.Count > maxRows)
             ActualPanel.Children.Add(NoteBlock(
                 Loc.T("fin_actual_more", ("n", (items.Count - maxRows).ToString()))));
+
+        if (hidden > 0)
+            ActualPanel.Children.Add(NoteBlock(
+                Loc.T("fin_filter_hidden", ("n", hidden.ToString()))));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Фильтр расходов: хранение, дата начала, сопоставление, диалог
+    // ────────────────────────────────────────────────────────────────
+
+    // Загрузка настроек фильтра из state (_finance_filter). Значения по умолчанию:
+    // только назначенные = вкл, с начала приёма = вкл, дата вручную = нет, список = авто.
+    private (bool onlyPrescribed, bool fromStart, string startOverride, JArray? subcats) LoadFinanceFilter()
+    {
+        bool onlyPrescribed = true, fromStart = true;
+        string startOverride = "";
+        JArray? subcats = null;
+        if (_ctx?.State.RawExtras.TryGetValue("_finance_filter", out var tok) == true && tok is JObject f)
+        {
+            if (f["only_prescribed"]?.Type == JTokenType.Boolean) onlyPrescribed = f["only_prescribed"]!.Value<bool>();
+            if (f["from_start"]?.Type == JTokenType.Boolean)      fromStart      = f["from_start"]!.Value<bool>();
+            startOverride = f["start_override"]?.ToString() ?? "";
+            subcats = f["subcats"] as JArray;
+        }
+        return (onlyPrescribed, fromStart, startOverride, subcats);
+    }
+
+    private JObject FinanceFilterObj()
+    {
+        if (_ctx!.State.RawExtras.TryGetValue("_finance_filter", out var tok) && tok is JObject f) return f;
+        var obj = new JObject();
+        _ctx.State.RawExtras["_finance_filter"] = obj;
+        return obj;
+    }
+
+    private void SaveFinanceFilterField(string key, JToken value)
+    {
+        if (_ctx == null) return;
+        FinanceFilterObj()[key] = value;
+        _ctx.SaveState();
+    }
+
+    // Самая ранняя дата с отметкой «Принято» (ISO yyyy-MM-dd) или null.
+    private string? EarliestTakenIso()
+    {
+        string? min = null;
+        if (_ctx == null) return null;
+        foreach (var kv in _ctx.State.Marks)
+            if (kv.Value.Values.Any(v => v) && (min == null || string.CompareOrdinal(kv.Key, min) < 0))
+                min = kv.Key;
+        return min;
+    }
+
+    // Эффективная дата начала (ISO): ручная дата, иначе первая «Принято», иначе null.
+    private string? EffectiveStartIso(bool fromStart, string startOverride)
+    {
+        if (!fromStart) return null;
+        if (!string.IsNullOrWhiteSpace(startOverride)
+            && DateTime.TryParseExact(startOverride.Trim(), "dd.MM.yyyy", null,
+                System.Globalization.DateTimeStyles.None, out var d))
+            return d.ToString("yyyy-MM-dd");
+        return EarliestTakenIso();
+    }
+
+    // Совпадает ли подкатегория «Аптеки» с одним из назначенных препаратов
+    // (нормализованное сравнение: равенство или вхождение в любую сторону).
+    private bool IsPrescribedSubcat(string sub)
+    {
+        var s = (sub ?? "").Trim().ToLowerInvariant();
+        if (s.Length == 0) return false;
+        foreach (var m in _meds)
+        {
+            var n = m.name.Trim().ToLowerInvariant();
+            if (n.Length == 0) continue;
+            if (s == n || s.Contains(n) || n.Contains(s)) return true;
+        }
+        return false;
+    }
+
+    // Выбранные подкатегории: сохранённый список, иначе авто-совпадения.
+    private HashSet<string> GetSelectedSubcats(IEnumerable<string> allSubcats, JArray? saved)
+    {
+        if (saved != null)
+            return new HashSet<string>(saved.Select(t => t.ToString()));
+        return new HashSet<string>(allSubcats.Where(IsPrescribedSubcat));
+    }
+
+    // Диалог настройки фильтра: дата начала + чеклист подкатегорий с автоотметкой.
+    private void ShowFilterDialog(IReadOnlyList<MoneyExpense> all)
+    {
+        var (_, _, startOverride, savedSubcats) = LoadFinanceFilter();
+
+        // Агрегаты по подкатегориям: количество и сумма
+        var agg = all.Where(e => !string.IsNullOrWhiteSpace(e.Subcategory))
+            .GroupBy(e => e.Subcategory)
+            .Select(g => (Name: g.Key, Count: g.Count(), Sum: g.Sum(x => x.Amount)))
+            .OrderByDescending(x => x.Sum)
+            .ToList();
+
+        var selected = GetSelectedSubcats(agg.Select(a => a.Name), savedSubcats);
+
+        var win = new Window
+        {
+            Title  = Loc.T("fin_filter_title"),
+            Width  = 460, Height = 600,
+            Owner  = Window.GetWindow(this),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Background = (Brush)FindResource("BgDarkBrush"),
+        };
+        var root = new DockPanel { Margin = new Thickness(14) };
+
+        // Верх: дата начала
+        var top = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
+        top.Children.Add(new TextBlock
+        {
+            Text = Loc.T("fin_filter_date_label"),
+            Foreground = (Brush)FindResource("TextPrimaryBrush"), Margin = new Thickness(0, 0, 0, 3),
+        });
+        var dateBox = new TextBox { Text = startOverride, Padding = new Thickness(5, 3, 5, 3) };
+        top.Children.Add(dateBox);
+        top.Children.Add(new TextBlock
+        {
+            Text = Loc.T("fin_filter_date_hint",
+                ("date", EarliestTakenIso() is { } iso ? FmtDate(iso) : "—")),
+            Foreground = (Brush)FindResource("TextSecondaryBrush"), FontSize = 11,
+            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0),
+        });
+        DockPanel.SetDock(top, Dock.Top);
+        root.Children.Add(top);
+
+        // Низ: кнопки
+        var okBtn     = new Button { Content = Loc.T("btn_save"),   Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 0, 8, 0) };
+        var cancelBtn = new Button { Content = Loc.T("btn_cancel"), Padding = new Thickness(12, 4, 12, 4) };
+        var btns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
+        btns.Children.Add(okBtn); btns.Children.Add(cancelBtn);
+        DockPanel.SetDock(btns, Dock.Bottom);
+        root.Children.Add(btns);
+
+        // Хелперы «отметить совпавшие / снять все»
+        var helpers = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+        var matchBtn = new Button { Content = Loc.T("fin_filter_check_matched"), Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0), FontSize = 11 };
+        var noneBtn  = new Button { Content = Loc.T("fin_filter_uncheck_all"),   Padding = new Thickness(8, 2, 8, 2), FontSize = 11 };
+        helpers.Children.Add(matchBtn); helpers.Children.Add(noneBtn);
+        DockPanel.SetDock(helpers, Dock.Top);
+        root.Children.Add(helpers);
+
+        // Список чекбоксов
+        var list = new StackPanel();
+        var boxes = new Dictionary<string, CheckBox>();
+        foreach (var a in agg)
+        {
+            var cb = new CheckBox
+            {
+                Content = $"{a.Name}   ·   {a.Count} × · {FmtMoney((double)a.Sum, true)} {Loc.T("fin_currency")}",
+                IsChecked = selected.Contains(a.Name),
+                Foreground = (Brush)FindResource("TextPrimaryBrush"),
+                Margin = new Thickness(0, 2, 0, 2),
+            };
+            boxes[a.Name] = cb;
+            list.Children.Add(cb);
+        }
+        matchBtn.Click += (_, _) => { foreach (var a in agg) boxes[a.Name].IsChecked = IsPrescribedSubcat(a.Name); };
+        noneBtn.Click  += (_, _) => { foreach (var cb in boxes.Values) cb.IsChecked = false; };
+
+        root.Children.Add(new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = list,
+        });
+
+        okBtn.Click += (_, _) =>
+        {
+            var chosen = new JArray(boxes.Where(kv => kv.Value.IsChecked == true)
+                                         .Select(kv => (object)kv.Key).ToArray());
+            var f = FinanceFilterObj();
+            f["subcats"] = chosen;
+            f["start_override"] = dateBox.Text.Trim();
+            _ctx!.SaveState();
+            win.DialogResult = true;
+        };
+        cancelBtn.Click += (_, _) => win.Close();
+
+        win.Content = root;
+        if (win.ShowDialog() == true) BuildActualExpenses();
     }
 
     private TextBlock NoteBlock(string text) => new TextBlock
