@@ -313,6 +313,28 @@ public partial class ScheduleView : UserControl
         return CardBorder(stack);
     }
 
+    // Отправить покупки лекарств (с известной ценой) в общую очередь Senior Hub.
+    // Запись расхода сделают сами «Деньги» (правило офиса: расходы ведутся только там).
+    private void PushPurchasesToMoney(List<(string name, double price)> items)
+    {
+        if (items.Count == 0) return;
+        var drafts = items.Select(it => new ExpenseDraft(
+            Guid.NewGuid().ToString("N"), IsRu ? "Таблетки" : "Meds",
+            DateTime.Today.ToString("yyyy-MM-dd"), "Аптека", null, it.price, it.name)).ToList();
+        ExpenseDraftQueue.AddRange(drafts);
+
+        double sum = 0; foreach (var i in items) sum += i.price;
+        string cur = IsRu ? "грн" : "UAH";
+        var msg = IsRu
+            ? $"Отправлено в «Деньги»: {drafts.Count} поз. на {sum.ToString("F2", Inv)} {cur}.\n\n" +
+              "Расходы запишутся в «Деньгах» (там нужно подтвердить). Открыть «Деньги» сейчас?"
+            : $"Sent to “Money”: {drafts.Count} item(s), {sum.ToString("F2", Inv)} {cur}.\n\nOpen “Money” now?";
+        var title = IsRu ? "Записать в «Деньги»" : "Save to “Money”";
+        if (System.Windows.MessageBox.Show(System.Windows.Window.GetWindow(this), msg, title,
+                MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            HomeAccountingReader.OpenHomeAccounting();
+    }
+
     // ── «Необходимо приобрести» — по умолчанию развёрнут ─────────────
     private Border BuildShoppingCard()
     {
@@ -370,6 +392,7 @@ public partial class ScheduleView : UserControl
         else
         {
             double total = 0; bool hasPrice = false;
+            var toMoney = new List<(string name, double price)>();   // для «Записать в «Деньги»»
             string rate = IsRu ? "расход" : "use";
             string dayW = IsRu ? "день"   : "day";
             var clip = new List<string> { $"{Loc.T("purchase_header")} ({DateTime.Now:dd.MM.yyyy}):", "" };
@@ -404,6 +427,7 @@ public partial class ScheduleView : UserControl
                 {
                     hasPrice = true; total += price.Value;
                     priceText = $"  ·  {price.Value.ToString("F2", Inv)} {cur}";
+                    toMoney.Add((name, price.Value));
                 }
 
                 content.Children.Add(new TextBlock
@@ -452,6 +476,17 @@ public partial class ScheduleView : UserControl
                 ((TextBlock)copyBadge.Child).Text = Loc.T("purchase_copied");
             };
             content.Children.Add(copyBadge);
+
+            // «Записать в «Деньги»» — отправить покупки (с ценой) в общую очередь
+            if (toMoney.Count > 0)
+            {
+                var moneyBadge = MakeClickBadge(IsRu ? "Записать в «Деньги»" : "Save to “Money”", "#2E7D32");
+                moneyBadge.HorizontalAlignment = HorizontalAlignment.Left;
+                moneyBadge.Margin = new Thickness(0, 6, 0, 0);
+                var snapshot = toMoney.ToList();
+                moneyBadge.MouseLeftButtonUp += (_, _) => PushPurchasesToMoney(snapshot);
+                content.Children.Add(moneyBadge);
+            }
         }
 
         left.MouseLeftButtonUp += (_, _) =>
