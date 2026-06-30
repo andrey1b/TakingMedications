@@ -90,6 +90,10 @@ public partial class ScheduleView : UserControl
             SectionsPanel.Children.Add(card);
         }
 
+        // ── Доп. блоки (порт из Python v64) ──────────────────────────
+        SectionsPanel.Children.Add(BuildNotesCard());
+        SectionsPanel.Children.Add(BuildShoppingCard());
+
         StatsLabel.Text = total == 0
             ? Loc.T("schedule_empty")
             : Loc.T("schedule_stats", ("taken", taken), ("total", total));
@@ -192,6 +196,454 @@ public partial class ScheduleView : UserControl
             Margin          = new Thickness(0, 0, 0, 10),
             Child           = stack,
         };
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Блоки «Важные примечания» и «Необходимо приобрести» (порт из v64)
+    // ════════════════════════════════════════════════════════════════
+
+    private const string NotesBlockKey    = "_notes_block";
+    private const string ShoppingBlockKey = "_shopping_block";
+
+    private static bool IsRu => Loc.CurrentLang == "ru";
+    private static readonly System.Globalization.CultureInfo Inv =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    // Русское склонение: 1 пункт / 2-4 пункта / 5+ пунктов
+    private static string RuPlural(int n, string one, string few, string many)
+    {
+        int a = Math.Abs(n), last = a % 10, last2 = a % 100;
+        if (last2 is >= 11 and <= 14) return many;
+        if (last == 1) return one;
+        if (last is >= 2 and <= 4) return few;
+        return many;
+    }
+
+    private Border CardBorder(UIElement child) => new Border
+    {
+        Background      = (Brush)FindResource("BgCardBrush"),
+        BorderBrush     = (Brush)FindResource("CardBorderBrush"),
+        BorderThickness = new Thickness(1),
+        CornerRadius    = new CornerRadius(12),
+        Padding         = new Thickness(14, 12, 14, 12),
+        Margin          = new Thickness(0, 0, 0, 10),
+        Child           = child,
+    };
+
+    // ── «Важные примечания» — по умолчанию свёрнут ───────────────────
+    private Border BuildNotesCard()
+    {
+        var accent = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)); // красный (как SOS)
+        bool collapsed = _collapsed.GetValueOrDefault(NotesBlockKey, true);
+        var notes = GetImportantNotes();
+        int n = notes.Count;
+
+        var indicator = new TextBlock
+        {
+            Text = collapsed ? "▶" : "▼", FontSize = 11, Foreground = accent,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0),
+        };
+        var title = new TextBlock
+        {
+            Text = Loc.T("notes_header"), FontSize = 16, FontWeight = FontWeights.Bold,
+            Foreground = accent, VerticalAlignment = VerticalAlignment.Center,
+        };
+        string countWord = IsRu ? RuPlural(n, "пункт", "пункта", "пунктов") : (n == 1 ? "item" : "items");
+        var count = new TextBlock
+        {
+            Text = $"  ({n} {countWord})", FontSize = 13, Foreground = accent,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var left = new StackPanel { Orientation = Orientation.Horizontal, Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
+        left.Children.Add(indicator);
+        left.Children.Add(title);
+        left.Children.Add(count);
+
+        var editBadge = MakeClickBadge("✎");
+        editBadge.HorizontalAlignment = HorizontalAlignment.Right;
+        editBadge.MouseLeftButtonUp += (_, _) => ShowNotesEditor();
+
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(left, 0);      header.Children.Add(left);
+        Grid.SetColumn(editBadge, 1); header.Children.Add(editBadge);
+
+        var content = new StackPanel
+        {
+            Margin     = new Thickness(0, 8, 0, 0),
+            Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible,
+        };
+        if (n > 0)
+        {
+            for (int i = 0; i < notes.Count; i++)
+                content.Children.Add(new TextBlock
+                {
+                    Text         = $"{i + 1}. {notes[i]}",
+                    FontSize     = 13,
+                    Foreground   = (Brush)FindResource("TextPrimaryBrush"),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin       = new Thickness(0, 2, 0, 2),
+                });
+        }
+        else
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text         = Loc.T("notes_empty_hint"),
+                FontSize     = 12, FontStyle = FontStyles.Italic,
+                Foreground   = (Brush)FindResource("TextSecondaryBrush"),
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
+
+        left.MouseLeftButtonUp += (_, _) =>
+        {
+            bool now = !_collapsed.GetValueOrDefault(NotesBlockKey, true);
+            _collapsed[NotesBlockKey] = now;
+            indicator.Text     = now ? "▶" : "▼";
+            content.Visibility = now ? Visibility.Collapsed : Visibility.Visible;
+            PersistCollapseState(NotesBlockKey, now);
+        };
+
+        var stack = new StackPanel();
+        stack.Children.Add(header);
+        stack.Children.Add(content);
+        return CardBorder(stack);
+    }
+
+    // ── «Необходимо приобрести» — по умолчанию развёрнут ─────────────
+    private Border BuildShoppingCard()
+    {
+        var orange    = new SolidColorBrush(Color.FromRgb(0xEF, 0x6C, 0x00));
+        var red       = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28));
+        var lowOrange = new SolidColorBrush(Color.FromRgb(0xE6, 0x51, 0x00));
+        bool collapsed = _collapsed.GetValueOrDefault(ShoppingBlockKey, false);
+        string cur = IsRu ? "грн" : "UAH";
+
+        var items = ComputeShoppingList();
+
+        var indicator = new TextBlock
+        {
+            Text = collapsed ? "▶" : "▼", FontSize = 11, Foreground = orange,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0),
+        };
+        var title = new TextBlock
+        {
+            Text = Loc.T("purchase_header"), FontSize = 16, FontWeight = FontWeights.Bold,
+            Foreground = orange, VerticalAlignment = VerticalAlignment.Center,
+        };
+        var left = new StackPanel { Orientation = Orientation.Horizontal, Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
+        left.Children.Add(indicator);
+        left.Children.Add(title);
+
+        var countTb = new TextBlock
+        {
+            FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = orange,
+            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right,
+        };
+
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(left, 0);    header.Children.Add(left);
+        Grid.SetColumn(countTb, 1); header.Children.Add(countTb);
+
+        var content = new StackPanel
+        {
+            Margin     = new Thickness(0, 8, 0, 0),
+            Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible,
+        };
+
+        if (items.Count == 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text       = Loc.T("purchase_all_ok"),
+                FontSize   = 12, FontStyle = FontStyles.Italic,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)),
+                TextWrapping = TextWrapping.Wrap,
+            });
+            countTb.Text = "";
+        }
+        else
+        {
+            double total = 0; bool hasPrice = false;
+            string rate = IsRu ? "расход" : "use";
+            string dayW = IsRu ? "день"   : "day";
+            var clip = new List<string> { $"{Loc.T("purchase_header")} ({DateTime.Now:dd.MM.yyyy}):", "" };
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                var (name, rem, daily) = items[i];
+                string remText, daysText = "";
+                Brush col;
+                if (rem <= 0)
+                {
+                    col = red;
+                    remText = rem == 0
+                        ? (IsRu ? "закончились" : "out of stock")
+                        : (IsRu ? $"перерасход {-rem} шт" : $"overused by {-rem} pcs");
+                }
+                else
+                {
+                    col = lowOrange;
+                    remText = IsRu
+                        ? $"осталось {rem} {RuPlural(rem, "таблетка", "таблетки", "таблеток")}"
+                        : $"{rem} {(rem == 1 ? "tablet" : "tablets")} left";
+                    int daysLeft = daily > 0 ? rem / daily : 0;
+                    daysText = IsRu
+                        ? $"  (~{daysLeft} {RuPlural(daysLeft, "день", "дня", "дней")})"
+                        : $"  (~{daysLeft} {(daysLeft == 1 ? "day" : "days")})";
+                }
+
+                double? price = GetLastPriceForName(name);
+                string priceText = "";
+                if (price.HasValue)
+                {
+                    hasPrice = true; total += price.Value;
+                    priceText = $"  ·  {price.Value.ToString("F2", Inv)} {cur}";
+                }
+
+                content.Children.Add(new TextBlock
+                {
+                    Text         = $"  {i + 1}. {name} — {remText}{daysText}  ({rate}: {daily}/{dayW}){priceText}",
+                    FontSize     = 13, FontWeight = FontWeights.SemiBold,
+                    Foreground   = col, TextWrapping = TextWrapping.Wrap,
+                    Margin       = new Thickness(0, 2, 0, 2),
+                });
+
+                clip.Add($"{i + 1}. {name} — {remText}{daysText}  ({rate}: {daily}/{dayW})"
+                         + (price.HasValue ? $"  / {price.Value.ToString("F2", Inv)} {cur}" : ""));
+            }
+
+            if (hasPrice)
+            {
+                content.Children.Add(new Rectangle
+                {
+                    Height = 1, Fill = (Brush)FindResource("SeparatorBrush"),
+                    Margin = new Thickness(0, 5, 0, 4),
+                });
+                string totalW = IsRu ? "Итого" : "Total";
+                content.Children.Add(new TextBlock
+                {
+                    Text       = $"{totalW}: {total.ToString("F2", Inv)} {cur}",
+                    FontSize   = 14, FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xBF, 0x36, 0x0C)),
+                    Margin     = new Thickness(0, 2, 0, 2),
+                });
+                clip.Add("");
+                clip.Add($"{(IsRu ? "ИТОГО" : "TOTAL")}: {total.ToString("F2", Inv)} {cur}");
+                countTb.Text = $"{items.Count}  ·  {total.ToString("F2", Inv)} {cur}";
+            }
+            else
+            {
+                countTb.Text = $"{items.Count}";
+            }
+
+            var copyBadge = MakeClickBadge(Loc.T("btn_copy_clipboard"), "#FF8F00");
+            copyBadge.HorizontalAlignment = HorizontalAlignment.Left;
+            copyBadge.Margin = new Thickness(0, 8, 0, 0);
+            var clipText = string.Join("\n", clip);
+            copyBadge.MouseLeftButtonUp += (_, _) =>
+            {
+                try { System.Windows.Clipboard.SetText(clipText); } catch { }
+                ((TextBlock)copyBadge.Child).Text = Loc.T("purchase_copied");
+            };
+            content.Children.Add(copyBadge);
+        }
+
+        left.MouseLeftButtonUp += (_, _) =>
+        {
+            bool now = !_collapsed.GetValueOrDefault(ShoppingBlockKey, false);
+            _collapsed[ShoppingBlockKey] = now;
+            indicator.Text     = now ? "▶" : "▼";
+            content.Visibility = now ? Visibility.Collapsed : Visibility.Visible;
+            PersistCollapseState(ShoppingBlockKey, now);
+        };
+
+        var stack = new StackPanel();
+        stack.Children.Add(header);
+        stack.Children.Add(content);
+        return CardBorder(stack);
+    }
+
+    // ── Расчёт списка покупок (порт med_shopping.compute_shopping_list) ──
+    private List<(string Name, int Remaining, int Daily)> ComputeShoppingList()
+    {
+        var daily       = new Dictionary<string, int>();
+        var nameToMeds  = new Dictionary<string, List<Medication>>();
+        foreach (var sec in _ctx!.Sections)
+            foreach (var m in sec.Items)
+            {
+                var nm = (m.Name ?? "").Trim();
+                if (nm.Length == 0) continue;
+                daily[nm] = daily.GetValueOrDefault(nm) + 1;
+                if (!nameToMeds.TryGetValue(nm, out var lst)) nameToMeds[nm] = lst = new();
+                lst.Add(m);
+            }
+
+        var result = new List<(string, int, int)>();
+        foreach (var (name, d) in daily)
+        {
+            var meds = nameToMeds[name];
+            bool allExpired = meds.Count > 0 && meds.All(m => GetCourse(m)?.Finished == true);
+            if (allExpired) continue;
+            var (remaining, hasData) = ComputeNameStock(name);
+            if (!hasData) continue;
+            if (remaining <= d) result.Add((name, remaining, d));
+        }
+        // Сначала закончившиеся / в минус, затем по алфавиту
+        result.Sort((a, b) => a.Item2 != b.Item2
+            ? a.Item2.CompareTo(b.Item2)
+            : string.Compare(a.Item1, b.Item1, StringComparison.OrdinalIgnoreCase));
+        return result;
+    }
+
+    // Запас по НАЗВАНИЮ (суммируя покупки и приёмы по всем mid с этим именем).
+    // remaining не ограничен снизу (может быть отрицательным = перерасход).
+    private (int Remaining, bool HasData) ComputeNameStock(string name)
+    {
+        var nameKey = (name ?? "").Trim().ToLowerInvariant();
+        if (nameKey.Length == 0) return (0, false);
+
+        var sameMids = _ctx!.Sections.SelectMany(s => s.Items)
+            .Where(m => m.Name.Trim().ToLowerInvariant() == nameKey)
+            .Select(m => m.Id).ToHashSet();
+        if (sameMids.Count == 0) return (0, false);
+
+        int purchased = 0;
+        if (_ctx.State.RawExtras.TryGetValue("_finance", out var finTok) && finTok is JObject fin
+            && fin["counts"] is JObject counts)
+        {
+            foreach (var prop in counts.Properties())
+            {
+                if (!sameMids.Contains(prop.Name) || prop.Value is not JObject dateMap) continue;
+                foreach (var dp in dateMap.Properties())
+                    if (int.TryParse(dp.Value.ToString(), out int v)) purchased += v;
+            }
+        }
+        if (purchased <= 0) return (0, false);
+
+        int taken = 0;
+        foreach (var kv in _ctx.State.Marks)
+            foreach (var mid in sameMids)
+                if (kv.Value.TryGetValue(mid, out var t) && t) taken++;
+
+        return (purchased - taken, true);
+    }
+
+    // Последняя ненулевая цена препарата из «Финансов» (по всем mid с этим именем).
+    private double? GetLastPriceForName(string name)
+    {
+        var nameKey = (name ?? "").Trim().ToLowerInvariant();
+        if (nameKey.Length == 0) return null;
+
+        var sameMids = _ctx!.Sections.SelectMany(s => s.Items)
+            .Where(m => m.Name.Trim().ToLowerInvariant() == nameKey)
+            .Select(m => m.Id).ToHashSet();
+        if (sameMids.Count == 0) return null;
+
+        if (_ctx.State.RawExtras.TryGetValue("_finance", out var finTok) && finTok is JObject fin
+            && fin["dates"] is JArray dates && fin["cells"] is JObject cells)
+        {
+            for (int i = dates.Count - 1; i >= 0; i--)
+            {
+                var date = dates[i].ToString();
+                foreach (var mid in sameMids)
+                {
+                    if (cells[mid] is JObject cm && cm[date] is JToken cell)
+                    {
+                        double vf = ParseNum(cell);
+                        if (vf > 0) return vf;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Безопасный разбор числа из JSON-ячейки, НЕ завязанный на текущую культуру.
+    // Числовой токен берём напрямую (иначе ToString() на ru-локали даёт "50,4",
+    // и парс с AllowThousands превращает его в 504). Строку нормализуем , → .
+    private static double ParseNum(JToken? t)
+    {
+        if (t == null) return 0;
+        if (t.Type is JTokenType.Float or JTokenType.Integer) return t.Value<double>();
+        var s = (t.ToString() ?? "").Trim().Replace(',', '.');
+        return double.TryParse(s, System.Globalization.NumberStyles.Float, Inv, out var v) ? v : 0;
+    }
+
+    // ── Важные примечания: чтение/запись (Python-ключ _important_notes) ──
+    private List<string> GetImportantNotes()
+    {
+        var list = new List<string>();
+        if (_ctx?.State.RawExtras.TryGetValue("_important_notes", out var tok) == true && tok is JArray arr)
+            foreach (var t in arr)
+            {
+                var s = t?.ToString();
+                if (!string.IsNullOrWhiteSpace(s)) list.Add(s.Trim());
+            }
+        return list;
+    }
+
+    private void SaveImportantNotes(IEnumerable<string> notes)
+    {
+        if (_ctx == null) return;
+        var cleaned = notes.Select(s => s.Trim()).Where(s => s.Length > 0).Cast<object>().ToArray();
+        _ctx.State.RawExtras["_important_notes"] = new JArray(cleaned);
+        _ctx.SaveState();
+    }
+
+    // Простой редактор примечаний — одно на строку (порт NotesEditDialog).
+    private void ShowNotesEditor()
+    {
+        var win = new Window
+        {
+            Title                 = Loc.T("notes_header"),
+            Width                 = 560, Height = 460,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner                 = Window.GetWindow(this),
+            Background            = (Brush)FindResource("BgDarkBrush"),
+        };
+        var root = new DockPanel { Margin = new Thickness(16) };
+
+        var hint = new TextBlock
+        {
+            Text       = IsRu ? "Каждое важное примечание — с новой строки:" : "One note per line:",
+            Foreground = (Brush)FindResource("TextSecondaryBrush"),
+            Margin     = new Thickness(0, 0, 0, 8),
+        };
+        DockPanel.SetDock(hint, Dock.Top);
+        root.Children.Add(hint);
+
+        var buttons = MakeDialogButtons(out var okBtn, out var cancelBtn);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        root.Children.Add(buttons);
+
+        var tb = new TextBox
+        {
+            AcceptsReturn            = true,
+            TextWrapping             = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Text                     = string.Join("\n", GetImportantNotes()),
+            FontSize                 = 13,
+            Padding                  = new Thickness(6),
+            Margin                   = new Thickness(0, 0, 0, 8),
+        };
+        root.Children.Add(tb);
+
+        okBtn.Click += (_, _) =>
+        {
+            var lines = tb.Text.Replace("\r", "").Split('\n');
+            SaveImportantNotes(lines);
+            win.DialogResult = true;
+        };
+        cancelBtn.Click += (_, _) => win.Close();
+
+        win.Content = root;
+        if (win.ShowDialog() == true) Render();
     }
 
     // ────────────────────────────────────────────────────────────────
