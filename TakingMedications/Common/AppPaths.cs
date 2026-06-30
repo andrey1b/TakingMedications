@@ -128,6 +128,26 @@ internal static class AppPaths
     }
 
     /// <summary>
+    /// Папка медицинских документов — **та же, что у Python**:
+    /// <c>%USERPROFILE%\Documents\Приём лекарств\&lt;short_name&gt;\MedInfo</c>.
+    /// Так C# и Python видят одни документы (раньше C# смотрел в AppData
+    /// и не находил файлы Python). Если профиля нет — fallback в data-папку.
+    /// </summary>
+    public static string ResolveDocumentsDir()
+    {
+        var name = GetDefaultProfileName();
+        if (!string.IsNullOrEmpty(name))
+        {
+            // ВАЖНО: как в Python — os.path.expanduser("~")\Documents, т.е.
+            // %USERPROFILE%\Documents, а НЕ SpecialFolder.MyDocuments
+            // (последний на этой машине перенаправлен в OneDrive\Документы).
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return Path.Combine(home, "Documents", AppName, name, "MedInfo");
+        }
+        return Path.Combine(ResolveDataDir(), "MedInfo");
+    }
+
+    /// <summary>
     /// Папка для standalone-режима (без Python-приложения).
     /// %APPDATA%\TakingMedications\ — не пересекается с папкой Python.
     /// </summary>

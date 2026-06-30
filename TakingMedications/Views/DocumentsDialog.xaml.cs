@@ -22,7 +22,7 @@ public partial class DocumentsDialog : Window
     public DocumentsDialog(MedAppContext ctx)
     {
         InitializeComponent();
-        _docsFolder = Path.Combine(AppPaths.ResolveDataDir(), "MedInfo");
+        _docsFolder = AppPaths.ResolveDocumentsDir();
 
         ApplyLocalization();
         Loc.LanguageChanged += ApplyLocalization;
@@ -38,6 +38,9 @@ public partial class DocumentsDialog : Window
         BtnAddFile.Content = Loc.T("documents_add_file");
         BtnOpenFolder.Content = Loc.T("documents_open_folder");
         BtnRefresh.Content = "🔄";
+        BtnRefresh.ToolTip = Loc.T("documents_refresh_tip");
+        BtnAddFile.ToolTip = Loc.T("documents_add_file");
+        BtnOpenFolder.ToolTip = Loc.T("documents_open_folder");
         BtnClose.Content   = Loc.T("btn_close");
     }
 

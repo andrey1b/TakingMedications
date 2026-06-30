@@ -227,6 +227,7 @@ public static class Loc
             ["documents_no_folder"]     = "Папка документов не найдена.",
             ["documents_delete_confirm"] = "Удалить файл «{name}»?",
             ["documents_add_file"]      = "➕ Добавить файл",
+            ["documents_refresh_tip"]   = "Обновить список",
 
             // Напоминания
             ["settings_reminders_section"]   = "🔔 Напоминания",
