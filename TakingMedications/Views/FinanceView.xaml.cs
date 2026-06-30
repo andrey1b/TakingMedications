@@ -126,12 +126,12 @@ public partial class FinanceView : UserControl
     {
         if (ActualExpander.IsExpanded)
         {
-            TopRow.Height       = new GridLength(2, GridUnitType.Star);
-            TopRow.MinHeight     = 96;
+            TopRow.Height       = new GridLength(1, GridUnitType.Star);
+            TopRow.MinHeight     = 150;
             SplitterRow.Height  = GridLength.Auto;
             FinSplitter.Visibility = Visibility.Visible;
-            BottomRow.Height    = new GridLength(3, GridUnitType.Star);
-            BottomRow.MinHeight = 120;
+            BottomRow.Height    = new GridLength(1, GridUnitType.Star);
+            BottomRow.MinHeight = 150;
         }
         else
         {
@@ -213,12 +213,10 @@ public partial class FinanceView : UserControl
             Content = Loc.T("fin_filter_only_prescribed"),
             IsChecked = onlyPrescribed,
             Foreground = (Brush)FindResource("TextPrimaryBrush"),
-            Margin = new Thickness(0, 0, 0, 2),
+            Margin = new Thickness(0, 0, 24, 0),
         };
         cbOnly.Checked   += (_, _) => { SaveFinanceFilterField("only_prescribed", true);  BuildActualExpenses(); };
         cbOnly.Unchecked += (_, _) => { SaveFinanceFilterField("only_prescribed", false); BuildActualExpenses(); };
-        DockPanel.SetDock(cbOnly, Dock.Top);
-        ActualPanel.Children.Add(cbOnly);
 
         string startLabel = startIso != null ? FmtDate(startIso) : "—";
         var cbFrom = new CheckBox
@@ -230,8 +228,13 @@ public partial class FinanceView : UserControl
         };
         cbFrom.Checked   += (_, _) => { SaveFinanceFilterField("from_start", true);  BuildActualExpenses(); };
         cbFrom.Unchecked += (_, _) => { SaveFinanceFilterField("from_start", false); BuildActualExpenses(); };
-        DockPanel.SetDock(cbFrom, Dock.Top);
-        ActualPanel.Children.Add(cbFrom);
+
+        // Оба чекбокса — в один ряд (экономит высоту верхней панели для списка)
+        var cbRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+        cbRow.Children.Add(cbOnly);
+        cbRow.Children.Add(cbFrom);
+        DockPanel.SetDock(cbRow, Dock.Top);
+        ActualPanel.Children.Add(cbRow);
 
         if (items.Count == 0)
         {

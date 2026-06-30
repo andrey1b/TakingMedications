@@ -9,9 +9,9 @@
     <RootNamespace>TakingMedications</RootNamespace>
     <AssemblyName>TakingMedications</AssemblyName>
     <AssemblyTitle>Taking Medications</AssemblyTitle>
-    <AssemblyVersion>1.7.2.0</AssemblyVersion>
-    <FileVersion>1.7.2.0</FileVersion>
-    <Description>Приём лекарств — C# WPF v1.7.2 («Финансы»: разделитель между расходами из «Денег» и план-таблицей — обе панели видны, можно тянуть)</Description>
+    <AssemblyVersion>1.7.3.0</AssemblyVersion>
+    <FileVersion>1.7.3.0</FileVersion>
+    <Description>Приём лекарств — C# WPF v1.7.3 («Финансы»: исправлена высота панелей — верхний список и нижняя таблица видны одновременно, деление 1:1 + разделитель)</Description>
     <ApplicationIcon>Medicines.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
