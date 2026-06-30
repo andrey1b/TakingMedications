@@ -126,11 +126,12 @@ public partial class FinanceView : UserControl
     {
         if (ActualExpander.IsExpanded)
         {
-            TopRow.Height       = new GridLength(1, GridUnitType.Star);
+            double r = LoadSplitterRatio();          // запомненная доля верхней панели
+            TopRow.Height       = new GridLength(r, GridUnitType.Star);
             TopRow.MinHeight     = 150;
             SplitterRow.Height  = GridLength.Auto;
             FinSplitter.Visibility = Visibility.Visible;
-            BottomRow.Height    = new GridLength(1, GridUnitType.Star);
+            BottomRow.Height    = new GridLength(1 - r, GridUnitType.Star);
             BottomRow.MinHeight = 150;
         }
         else
@@ -142,6 +143,25 @@ public partial class FinanceView : UserControl
             BottomRow.Height    = new GridLength(1, GridUnitType.Star);
             BottomRow.MinHeight = 0;
         }
+    }
+
+    // Запомненная доля верхней панели (0.2–0.8); по умолчанию 0.5.
+    private double LoadSplitterRatio()
+    {
+        if (_ctx?.State.RawExtras.TryGetValue("_finance_filter", out var tok) == true && tok is JObject f
+            && f["splitter_ratio"] is JToken rt && rt.Type is JTokenType.Float or JTokenType.Integer)
+            return Math.Clamp(rt.Value<double>(), 0.2, 0.8);
+        return 0.5;
+    }
+
+    // Перетащили разделитель — запоминаем новую долю верхней панели.
+    private void FinSplitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+    {
+        if (TopRow.Height.GridUnitType != GridUnitType.Star ||
+            BottomRow.Height.GridUnitType != GridUnitType.Star) return;
+        double top = TopRow.Height.Value, bot = BottomRow.Height.Value, sum = top + bot;
+        if (sum <= 0) return;
+        SaveFinanceFilterField("splitter_ratio", Math.Clamp(top / sum, 0.2, 0.8));
     }
 
     // ────────────────────────────────────────────────────────────────

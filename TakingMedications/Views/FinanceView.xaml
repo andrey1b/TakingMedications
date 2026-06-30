@@ -33,7 +33,8 @@
                       Height="6" HorizontalAlignment="Stretch"
                       Visibility="Collapsed"
                       Background="{DynamicResource AccentBrush}"
-                      ResizeBehavior="PreviousAndNext" ResizeDirection="Rows" />
+                      ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"
+                      DragCompleted="FinSplitter_DragCompleted" />
 
         <!-- ═══ Нижняя панель: план-таблица (тулбар + шапка + данные) ═══ -->
         <Grid Grid.Row="2">
