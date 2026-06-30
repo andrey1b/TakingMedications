@@ -9,9 +9,9 @@
     <RootNamespace>TakingMedications</RootNamespace>
     <AssemblyName>TakingMedications</AssemblyName>
     <AssemblyTitle>Taking Medications</AssemblyTitle>
-    <AssemblyVersion>1.6.1.0</AssemblyVersion>
-    <FileVersion>1.6.1.0</FileVersion>
-    <Description>Приём лекарств — C# WPF v1.6.1 (документы в общей с Python папке; подсказка кнопке «Обновить»)</Description>
+    <AssemblyVersion>1.7.0.0</AssemblyVersion>
+    <FileVersion>1.7.0.0</FileVersion>
+    <Description>Приём лекарств — C# WPF v1.7.0 (вкладка «Финансы»: чтение расходов на лекарства из «Денег», read-only; ручная таблица — как план)</Description>
     <ApplicationIcon>Medicines.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>

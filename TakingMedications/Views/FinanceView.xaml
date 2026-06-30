@@ -5,13 +5,30 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />   <!-- фактические расходы из «Денег» (read-only) -->
             <RowDefinition Height="Auto" />   <!-- toolbar -->
             <RowDefinition Height="Auto" />   <!-- frozen header rows -->
             <RowDefinition Height="*" />      <!-- scrollable data rows -->
         </Grid.RowDefinitions>
 
+        <!-- ═══ Фактические расходы на лекарства из «Денег» (только чтение) ═══ -->
+        <Expander Grid.Row="0" x:Name="ActualExpander"
+                  Margin="0,0,0,4" IsExpanded="False"
+                  Background="{DynamicResource BgCardBrush}"
+                  Foreground="{DynamicResource TextPrimaryBrush}">
+            <Expander.Header>
+                <TextBlock x:Name="ActualHeaderText"
+                           FontWeight="Bold" FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+            </Expander.Header>
+            <Border Padding="10,8" Background="{DynamicResource BgCardBrush}"
+                    CornerRadius="0,0,12,12">
+                <StackPanel x:Name="ActualPanel" />
+            </Border>
+        </Expander>
+
         <!-- ═══ Тулбар ═══ -->
-        <Border Grid.Row="0"
+        <Border Grid.Row="1"
                 Background="{DynamicResource BgCardBrush}"
                 CornerRadius="12" Padding="12,8" Margin="0,0,0,4">
             <Grid>
@@ -19,10 +36,14 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="GrandTotalLabel"
-                           FontSize="16" FontWeight="Bold"
-                           Foreground="#FFC107"
-                           VerticalAlignment="Center" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="GrandTotalLabel"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="#FFC107" />
+                    <TextBlock x:Name="PlanNote"
+                               FontSize="11" Opacity="0.8"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button x:Name="BtnAddDate"
                             Style="{StaticResource RoundButton}"
@@ -38,7 +59,7 @@
         </Border>
 
         <!-- ═══ Заморожённая шапка (строки 0 и 1) ═══ -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -58,7 +79,7 @@
         </Grid>
 
         <!-- ═══ Скроллируемые строки данных ═══ -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />

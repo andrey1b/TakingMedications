@@ -89,6 +89,7 @@ public partial class FinanceView : UserControl
         };
 
         BuildGrid();
+        BuildActualExpenses();
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -102,9 +103,127 @@ public partial class FinanceView : UserControl
         LoadMeds();
         DeduplicateData();
         BuildGrid();
+        BuildActualExpenses();
     }
 
-    private void OnLangChanged() => BuildGrid();
+    private void OnLangChanged()
+    {
+        BuildGrid();
+        BuildActualExpenses();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Фактические расходы из «Денег» (только чтение)
+    // ────────────────────────────────────────────────────────────────
+
+    private void BuildActualExpenses()
+    {
+        // Подпись: таблица ниже — это ПЛАН/оценка, а не учёт расходов
+        PlanNote.Text = Loc.T("fin_plan_note");
+
+        ActualPanel.Children.Clear();
+
+        if (!HomeAccountingReader.IsAvailable)
+        {
+            ActualHeaderText.Text = Loc.T("fin_actual_title");
+            ActualPanel.Children.Add(NoteBlock(Loc.T("fin_actual_no_money")));
+            return;
+        }
+
+        var items = HomeAccountingReader.GetMedicationExpenses();
+        decimal total = HomeAccountingReader.Total(items);
+
+        ActualHeaderText.Text = Loc.T("fin_actual_title") + "   —   " +
+            Loc.T("fin_actual_total",
+                ("amount",   FmtMoney((double)total, true)),
+                ("currency", Loc.T("fin_currency")));
+
+        var openBtn = new Button
+        {
+            Content = Loc.T("fin_actual_open_money"),
+            Style = (Style)FindResource("RoundButton"),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(14, 5, 14, 5),
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+        openBtn.Click += (_, _) => HomeAccountingReader.OpenHomeAccounting();
+        ActualPanel.Children.Add(openBtn);
+
+        if (items.Count == 0)
+        {
+            ActualPanel.Children.Add(NoteBlock(Loc.T("fin_actual_empty")));
+            return;
+        }
+
+        // Таблица: Дата | Препарат/статья | Счёт | Сумма
+        var table = new Grid();
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+
+        var fg = (Brush)FindResource("TextPrimaryBrush");
+        void Cell(string text, int row, int col, bool bold = false, TextAlignment al = TextAlignment.Left)
+        {
+            var tb = new TextBlock
+            {
+                Text = text, Foreground = fg, FontSize = 12,
+                FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
+                TextAlignment = al, TextTrimming = TextTrimming.CharacterEllipsis,
+                Padding = new Thickness(4, 3, 6, 3),
+            };
+            Grid.SetRow(tb, row); Grid.SetColumn(tb, col);
+            table.Children.Add(tb);
+        }
+
+        table.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Cell(Loc.T("fin_actual_hdr_date"),    0, 0, bold: true);
+        Cell(Loc.T("fin_actual_hdr_name"),    0, 1, bold: true);
+        Cell(Loc.T("fin_actual_hdr_account"), 0, 2, bold: true);
+        Cell(Loc.T("fin_actual_hdr_amount"),  0, 3, bold: true, al: TextAlignment.Right);
+
+        const int maxRows = 100;
+        int shown = Math.Min(items.Count, maxRows);
+        for (int i = 0; i < shown; i++)
+        {
+            var e = items[i];
+            int r = i + 1;
+            table.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            string name = !string.IsNullOrWhiteSpace(e.Subcategory) ? e.Subcategory : e.Category;
+            if (!string.IsNullOrWhiteSpace(e.Note)) name += " — " + e.Note;
+            Cell(FmtDate(e.Date), r, 0);
+            Cell(name,            r, 1);
+            Cell(e.Account,       r, 2);
+            Cell(FmtMoney((double)e.Amount, true), r, 3, al: TextAlignment.Right);
+        }
+
+        var scroller = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            MaxHeight = 220, Content = table,
+        };
+        ActualPanel.Children.Add(scroller);
+
+        if (items.Count > maxRows)
+            ActualPanel.Children.Add(NoteBlock(
+                Loc.T("fin_actual_more", ("n", (items.Count - maxRows).ToString()))));
+    }
+
+    private TextBlock NoteBlock(string text) => new TextBlock
+    {
+        Text = text, TextWrapping = TextWrapping.Wrap,
+        Foreground = (Brush)FindResource("TextPrimaryBrush"),
+        Opacity = 0.85, FontSize = 12, Margin = new Thickness(0, 2, 0, 0),
+    };
+
+    // Дата из «Денег» хранится как yyyy-MM-dd → показываем dd.MM.yyyy
+    private static string FmtDate(string iso)
+    {
+        if (DateTime.TryParse(iso, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var dt))
+            return dt.ToString("dd.MM.yyyy");
+        return iso;
+    }
 
     private void RightScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
