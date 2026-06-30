@@ -90,6 +90,7 @@ public partial class FinanceView : UserControl
 
         BuildGrid();
         BuildActualExpenses();
+        ApplyExpanderLayout();
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -110,6 +111,37 @@ public partial class FinanceView : UserControl
     {
         BuildGrid();
         BuildActualExpenses();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Раскладка: верхняя панель «Денег» vs нижняя план-таблица
+    // ────────────────────────────────────────────────────────────────
+
+    // Свёрнуто → верх по содержимому, низ во всю высоту.
+    // Раскрыто → делёж по пропорции (2:3) + перетаскиваемый разделитель,
+    // чтобы обе панели были видны и нижнюю можно было листать/править.
+    private void ActualExpander_Toggled(object sender, RoutedEventArgs e) => ApplyExpanderLayout();
+
+    private void ApplyExpanderLayout()
+    {
+        if (ActualExpander.IsExpanded)
+        {
+            TopRow.Height       = new GridLength(2, GridUnitType.Star);
+            TopRow.MinHeight     = 96;
+            SplitterRow.Height  = GridLength.Auto;
+            FinSplitter.Visibility = Visibility.Visible;
+            BottomRow.Height    = new GridLength(3, GridUnitType.Star);
+            BottomRow.MinHeight = 120;
+        }
+        else
+        {
+            TopRow.Height       = GridLength.Auto;
+            TopRow.MinHeight     = 0;
+            SplitterRow.Height  = new GridLength(0);
+            FinSplitter.Visibility = Visibility.Collapsed;
+            BottomRow.Height    = new GridLength(1, GridUnitType.Star);
+            BottomRow.MinHeight = 0;
+        }
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -172,6 +204,7 @@ public partial class FinanceView : UserControl
         };
         cfgBtn.Click += (_, _) => ShowFilterDialog(all);
         btnRow.Children.Add(cfgBtn);
+        DockPanel.SetDock(btnRow, Dock.Top);
         ActualPanel.Children.Add(btnRow);
 
         // ── Быстрые чекбоксы ─────────────────────────────────────────
@@ -184,6 +217,7 @@ public partial class FinanceView : UserControl
         };
         cbOnly.Checked   += (_, _) => { SaveFinanceFilterField("only_prescribed", true);  BuildActualExpenses(); };
         cbOnly.Unchecked += (_, _) => { SaveFinanceFilterField("only_prescribed", false); BuildActualExpenses(); };
+        DockPanel.SetDock(cbOnly, Dock.Top);
         ActualPanel.Children.Add(cbOnly);
 
         string startLabel = startIso != null ? FmtDate(startIso) : "—";
@@ -196,6 +230,7 @@ public partial class FinanceView : UserControl
         };
         cbFrom.Checked   += (_, _) => { SaveFinanceFilterField("from_start", true);  BuildActualExpenses(); };
         cbFrom.Unchecked += (_, _) => { SaveFinanceFilterField("from_start", false); BuildActualExpenses(); };
+        DockPanel.SetDock(cbFrom, Dock.Top);
         ActualPanel.Children.Add(cbFrom);
 
         if (items.Count == 0)
@@ -246,20 +281,27 @@ public partial class FinanceView : UserControl
             Cell(FmtMoney((double)e.Amount, true), r, 3, al: TextAlignment.Right);
         }
 
+        // Заметки — внизу (Dock=Bottom); список добавляем ПОСЛЕДНИМ → он
+        // заполняет центр панели и листается (высота берётся от TopRow).
+        if (items.Count > maxRows)
+        {
+            var more = NoteBlock(Loc.T("fin_actual_more", ("n", (items.Count - maxRows).ToString())));
+            DockPanel.SetDock(more, Dock.Bottom);
+            ActualPanel.Children.Add(more);
+        }
+        if (hidden > 0)
+        {
+            var hid = NoteBlock(Loc.T("fin_filter_hidden", ("n", hidden.ToString())));
+            DockPanel.SetDock(hid, Dock.Bottom);
+            ActualPanel.Children.Add(hid);
+        }
+
         var scroller = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            MaxHeight = 220, Content = table,
+            MinHeight = 80, Content = table,
         };
         ActualPanel.Children.Add(scroller);
-
-        if (items.Count > maxRows)
-            ActualPanel.Children.Add(NoteBlock(
-                Loc.T("fin_actual_more", ("n", (items.Count - maxRows).ToString()))));
-
-        if (hidden > 0)
-            ActualPanel.Children.Add(NoteBlock(
-                Loc.T("fin_filter_hidden", ("n", hidden.ToString()))));
     }
 
     // ────────────────────────────────────────────────────────────────

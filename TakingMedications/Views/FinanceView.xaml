@@ -1,19 +1,20 @@
-﻿<UserControl x:Class="TakingMedications.Views.FinanceView"
+<UserControl x:Class="TakingMedications.Views.FinanceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource BgDarkBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />   <!-- фактические расходы из «Денег» (read-only) -->
-            <RowDefinition Height="Auto" />   <!-- toolbar -->
-            <RowDefinition Height="Auto" />   <!-- frozen header rows -->
-            <RowDefinition Height="*" />      <!-- scrollable data rows -->
+            <RowDefinition x:Name="TopRow"      Height="Auto" />  <!-- расходы из «Денег» -->
+            <RowDefinition x:Name="SplitterRow" Height="0" />     <!-- разделитель (виден при раскрытии) -->
+            <RowDefinition x:Name="BottomRow"   Height="*" />     <!-- план-таблица -->
         </Grid.RowDefinitions>
 
         <!-- ═══ Фактические расходы на лекарства из «Денег» (только чтение) ═══ -->
         <Expander Grid.Row="0" x:Name="ActualExpander"
                   Margin="0,0,0,4" IsExpanded="False"
+                  Expanded="ActualExpander_Toggled"
+                  Collapsed="ActualExpander_Toggled"
                   Background="{DynamicResource BgCardBrush}"
                   Foreground="{DynamicResource TextPrimaryBrush}">
             <Expander.Header>
@@ -23,94 +24,110 @@
             </Expander.Header>
             <Border Padding="10,8" Background="{DynamicResource BgCardBrush}"
                     CornerRadius="0,0,12,12">
-                <StackPanel x:Name="ActualPanel" />
+                <DockPanel x:Name="ActualPanel" LastChildFill="True" />
             </Border>
         </Expander>
 
-        <!-- ═══ Тулбар ═══ -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource BgCardBrush}"
-                CornerRadius="12" Padding="12,8" Margin="0,0,0,4">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Name="GrandTotalLabel"
-                               FontSize="16" FontWeight="Bold"
-                               Foreground="#FFC107" />
-                    <TextBlock x:Name="PlanNote"
-                               FontSize="11" Opacity="0.8"
-                               Foreground="{DynamicResource TextPrimaryBrush}" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnAddDate"
-                            Style="{StaticResource RoundButton}"
-                            Background="{StaticResource SuccessBrush}"
-                            Margin="0,0,8,0"
-                            Click="BtnAddDate_Click" />
-                    <Button x:Name="BtnDelDate"
-                            Style="{StaticResource RoundButton}"
-                            Background="{StaticResource DangerBrush}"
-                            Click="BtnDelDate_Click" />
-                </StackPanel>
-            </Grid>
-        </Border>
+        <!-- ═══ Разделитель между панелями (drag для перераспределения высоты) ═══ -->
+        <GridSplitter Grid.Row="1" x:Name="FinSplitter"
+                      Height="6" HorizontalAlignment="Stretch"
+                      Visibility="Collapsed"
+                      Background="{DynamicResource AccentBrush}"
+                      ResizeBehavior="PreviousAndNext" ResizeDirection="Rows" />
 
-        <!-- ═══ Заморожённая шапка (строки 0 и 1) ═══ -->
+        <!-- ═══ Нижняя панель: план-таблица (тулбар + шапка + данные) ═══ -->
         <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />   <!-- toolbar -->
+                <RowDefinition Height="Auto" />   <!-- frozen header rows -->
+                <RowDefinition Height="*" />      <!-- scrollable data rows -->
+            </Grid.RowDefinitions>
 
-            <!-- Левая шапка: No + Препарат -->
-            <Grid x:Name="LeftHeaderGrid" />
+            <!-- ═══ Тулбар ═══ -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource BgCardBrush}"
+                    CornerRadius="12" Padding="12,8" Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="GrandTotalLabel"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="#FFC107" />
+                        <TextBlock x:Name="PlanNote"
+                                   FontSize="11" Opacity="0.8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnAddDate"
+                                Style="{StaticResource RoundButton}"
+                                Background="{StaticResource SuccessBrush}"
+                                Margin="0,0,8,0"
+                                Click="BtnAddDate_Click" />
+                        <Button x:Name="BtnDelDate"
+                                Style="{StaticResource RoundButton}"
+                                Background="{StaticResource DangerBrush}"
+                                Click="BtnDelDate_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-            <!-- Правая шапка: даты + ₴/шт (горизонтально прокручивается вместе с данными) -->
-            <ScrollViewer x:Name="RightHeaderScroll"
-                          Grid.Column="1"
-                          HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollBarVisibility="Disabled"
-                          Focusable="False">
-                <Grid x:Name="RightHeaderGrid" />
-            </ScrollViewer>
-        </Grid>
+            <!-- ═══ Заморожённая шапка (строки 0 и 1) ═══ -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-        <!-- ═══ Скроллируемые строки данных ═══ -->
-        <Grid Grid.Row="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+                <!-- Левая шапка: No + Препарат -->
+                <Grid x:Name="LeftHeaderGrid" />
 
-            <!-- Левая заморожённая часть: скроллер + спейсер под горизонтальный скроллбар -->
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <ScrollViewer x:Name="LeftScroll"
-                              VerticalScrollBarVisibility="Hidden"
-                              HorizontalScrollBarVisibility="Disabled"
+                <!-- Правая шапка: даты + ₴/шт (горизонтально прокручивается вместе с данными) -->
+                <ScrollViewer x:Name="RightHeaderScroll"
+                              Grid.Column="1"
+                              HorizontalScrollBarVisibility="Hidden"
+                              VerticalScrollBarVisibility="Disabled"
                               Focusable="False">
-                    <Grid x:Name="LeftGrid" />
+                    <Grid x:Name="RightHeaderGrid" />
                 </ScrollViewer>
-                <!-- высота устанавливается из кода, когда виден горизонтальный скроллбар -->
-                <Border x:Name="LeftScrollSpacer" Grid.Row="1" Height="0"
-                        Background="{DynamicResource BgCardBrush}" />
             </Grid>
 
-            <!-- Правая скроллируемая часть (данные + итого) -->
-            <ScrollViewer x:Name="RightScroll"
-                          Grid.Column="1"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto"
-                          ScrollChanged="RightScroll_ScrollChanged"
-                          SizeChanged="RightScroll_SizeChanged">
-                <Grid x:Name="RightGrid" />
-            </ScrollViewer>
+            <!-- ═══ Скроллируемые строки данных ═══ -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Левая заморожённая часть: скроллер + спейсер под горизонтальный скроллбар -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ScrollViewer x:Name="LeftScroll"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Focusable="False">
+                        <Grid x:Name="LeftGrid" />
+                    </ScrollViewer>
+                    <!-- высота устанавливается из кода, когда виден горизонтальный скроллбар -->
+                    <Border x:Name="LeftScrollSpacer" Grid.Row="1" Height="0"
+                            Background="{DynamicResource BgCardBrush}" />
+                </Grid>
+
+                <!-- Правая скроллируемая часть (данные + итого) -->
+                <ScrollViewer x:Name="RightScroll"
+                              Grid.Column="1"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              ScrollChanged="RightScroll_ScrollChanged"
+                              SizeChanged="RightScroll_SizeChanged">
+                    <Grid x:Name="RightGrid" />
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>
