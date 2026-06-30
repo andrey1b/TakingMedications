@@ -79,6 +79,7 @@ public partial class MainWindow : Window
         TabHistory.Header   = Loc.T("tab_history");
         TabFinance.Header   = Loc.T("tab_finance");
         TabForecast.Header  = Loc.T("tab_forecast");
+        TabAskAi.Header     = Loc.T("tab_ask_ai");
     }
 
     private void UpdateReminderButton()

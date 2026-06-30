@@ -158,6 +158,12 @@
                     <views:ForecastView x:Name="ForecastViewControl" />
                 </Border>
             </TabItem>
+            <TabItem x:Name="TabAskAi" Style="{StaticResource DarkTab}">
+                <Border Background="{DynamicResource BgCardBrush}" Padding="14"
+                        CornerRadius="0,10,10,10">
+                    <views:AskAiView x:Name="AskAiViewControl" />
+                </Border>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
